@@ -2,7 +2,7 @@
 A Language Server Protocol (LSP) to share what you're coding on discord.
 
 **TODO:**
-- [ ] fix issues with opening and closing
+- [ ] fix issues with opening and closing that cause the lsp to not detect shizz no more?
 - [ ] better rich presence embed
 - [ ] add assets
 - [ ] improve code strucuture to use oop
