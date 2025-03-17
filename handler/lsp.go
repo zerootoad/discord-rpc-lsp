@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/go-lsp"
 	"github.com/sourcegraph/jsonrpc2"
 	"github.com/zerootoad/discord-rpc-lsp/client"
+	"github.com/zerootoad/discord-rpc-lsp/utils"
 )
 
 type LSPHandler struct {
@@ -55,8 +56,29 @@ func (h *LSPHandler) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 			}
 
 			h.Client.Editor = params.ClientInfo.Name
+			h.Client.ApplicationID = ""
+			switch h.Client.Editor {
+			case "Neovim":
+				h.Client.ApplicationID = "1351256847612514390" // Nvim
+			case "helix":
+				h.Client.ApplicationID = "1351256971059396679" // Helix
+			default:
+				h.Client.ApplicationID = "1351257618227920896" // Code
+			}
+
+			for {
+				err := client.Login(string(h.Client.ApplicationID))
+				if err == nil {
+					break
+				}
+
+				log.Fatalf("Failed to create Discord RPC client: %v (retrying in 1 minute)", err)
+
+				time.Sleep(1 * time.Minute)
+			}
+
 			h.Client.RootURI = string(params.RootURI)
-			h.Client.WorkspaceName = client.GetFileName(h.Client.RootURI)
+			h.Client.WorkspaceName = utils.GetFileName(h.Client.RootURI)
 
 			workspacePath := filepath.Dir(h.Client.RootURI)
 			remoteUrl, branchName, err := client.GetGitRepositoryInfo(workspacePath)
@@ -133,7 +155,7 @@ func (h *LSPHandler) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 }
 
 func (h *LSPHandler) didOpen(params lsp.DidOpenTextDocumentParams) {
-	fileName := client.GetFileName(string(params.TextDocument.URI))
+	fileName := utils.GetFileName(string(params.TextDocument.URI))
 
 	h.CurrentLang = h.LangMaps.GetLanguage(fileName)
 	if h.CurrentLang == "" {
@@ -148,7 +170,7 @@ func (h *LSPHandler) didOpen(params lsp.DidOpenTextDocumentParams) {
 }
 
 func (h *LSPHandler) didChange(params lsp.DidChangeTextDocumentParams) {
-	fileName := client.GetFileName(string(params.TextDocument.URI))
+	fileName := utils.GetFileName(string(params.TextDocument.URI))
 
 	h.CurrentLang = h.LangMaps.GetLanguage(fileName)
 	if h.CurrentLang == "" {

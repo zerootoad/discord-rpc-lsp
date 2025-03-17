@@ -8,7 +8,6 @@ import (
 
 	"github.com/sourcegraph/jsonrpc2"
 
-	"github.com/zerootoad/discord-rpc-lsp/client"
 	"github.com/zerootoad/discord-rpc-lsp/handler"
 	"github.com/zerootoad/discord-rpc-lsp/utils"
 )
@@ -30,11 +29,6 @@ func main() {
 	defer logFile.Close()
 
 	log.SetOutput(logFile)
-	err = client.Login("1350478888027029596")
-	if err != nil {
-		log.Fatalf("Failed to create Discord RPC client: %v", err)
-	}
-	defer client.Logout()
 
 	lspHandler, err := handler.NewLSPHandler()
 	if err != nil {

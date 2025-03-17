@@ -6,6 +6,8 @@ import (
 	"log"
 	"net/http"
 	"regexp"
+
+	"github.com/zerootoad/discord-rpc-lsp/utils"
 )
 
 type LangMaps struct {
@@ -34,7 +36,7 @@ func LoadLangMaps(url string) (LangMaps, error) {
 }
 
 func (l *LangMaps) GetLanguage(fileName string) string {
-	ext := GetFileExtension(fileName)
+	ext := utils.GetFileExtension(fileName)
 
 	log.Println("Checking for language by extension:", ext)
 	if lang, ok := l.ExtMap[ext]; ok {

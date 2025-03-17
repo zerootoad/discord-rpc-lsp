@@ -1,12 +1,11 @@
 package client
 
 import (
-	"path/filepath"
-
 	"github.com/go-git/go-git/v5"
 )
 
 type Client struct {
+	ApplicationID string
 	Editor        string
 	RootURI       string
 	WorkspaceName string
@@ -33,12 +32,4 @@ func GetGitRepositoryInfo(workspacePath string) (remoteURL, branchName string, e
 	branchName = head.Name().Short()
 
 	return remoteURL, branchName, nil
-}
-
-func GetFileName(uri string) string {
-	return filepath.Base(uri)
-}
-
-func GetFileExtension(uri string) string {
-	return filepath.Ext(uri)
 }
