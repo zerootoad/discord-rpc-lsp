@@ -82,16 +82,7 @@ This LSP works with any editor that supports the Language Server Protocol (LSP).
 3. Add the following configuration to your `settings.json`:
 
    ```json
-   {
-     "lsp": {
-       "servers": {
-         "discord-rpc-lsp": {
-           "command": ["path/to/discord-rpc-lsp"],
-           "enabled": true
-         }
-       }
-     }
-   }
+   soon..
    ```
 
 4. Replace `path/to/discord-rpc-lsp` with the actual path to the built binary.
@@ -104,10 +95,7 @@ This LSP works with any editor that supports the Language Server Protocol (LSP).
 2. Add the following configuration to your `init.lua`:
 
    ```lua
-   local lspconfig = require('lspconfig')
-   lspconfig.discord_rpc.setup({
-       cmd = { "path/to/discord-rpc-lsp" },
-   })
+   soon..
    ```
 
 3. Replace `path/to/discord-rpc-lsp` with the actual path to the built binary.
