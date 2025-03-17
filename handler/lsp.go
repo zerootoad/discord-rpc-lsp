@@ -23,27 +23,16 @@ type LSPHandler struct {
 
 func NewLSPHandler() *LSPHandler {
 	return &LSPHandler{
-		IdleTimer: time.NewTimer(5 * time.Minute),
-		Client:    &client.Client{},
+        
+		Client: &client.Client{},
 	}
-}
-
-func (h *LSPHandler) StartIdleTimer() {
-	go func() {
-		<-h.IdleTimer.C
-		client.UpdateDiscordActivity("Idling", "No file open", h.CurrentLang, h.Client.Editor, h.Client.GitRemoteURL, h.Client.GitBranchName)
-	}()
-}
-
-func (h *LSPHandler) ResetIdleTimer() {
-	if !h.IdleTimer.Stop() {
-		<-h.IdleTimer.C
-	}
-	h.IdleTimer.Reset(5 * time.Minute)
 }
 
 func (h *LSPHandler) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) {
 	go func() {
+		log.Printf("Received request: %s", req.Method)
+		log.Printf("Request params: %s", req.Params)
+
 		switch req.Method {
 		case "initialize":
 			if req.Params == nil {
@@ -89,7 +78,6 @@ func (h *LSPHandler) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 
 		case "initialized":
 			log.Println("Client initialized")
-			h.StartIdleTimer()
 
 		case "shutdown":
 			h.Shutdown = true
@@ -119,7 +107,6 @@ func (h *LSPHandler) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 				return
 			}
 
-			h.StartIdleTimer()
 			fileName := client.GetFileName(string(params.TextDocument.URI))
 			h.CurrentLang = params.TextDocument.LanguageID
 
@@ -141,7 +128,6 @@ func (h *LSPHandler) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 				return
 			}
 
-			h.StartIdleTimer()
 			fileName := client.GetFileName(string(params.TextDocument.URI))
 
 			log.Printf("File changed: %s (Language: %s)", fileName, h.CurrentLang)
