@@ -117,7 +117,7 @@ This LSP works with any editor that supports the Language Server Protocol (LSP).
    ```toml
    [[language]]
    name = "go"
-   language-servers = [ "discord-rpc" ]
+   language-servers = [ "discord-rpc" ]```
 
 
 ---
