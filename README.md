@@ -1,9 +1,10 @@
 # Discord Rich Presence LSP
 
-A Language Server Protocol (LSP) to share what you're coding on Discord. This LSP integrates with your editor to display your current coding activity (file, language, and more) as a rich presence on Discord. (currently only tested with helix)
+A Language Server Protocol (LSP) to share what you're coding on Discord. This LSP integrates with your editor to display your current coding activity (file, language, and more) as a rich presence on Discord. 
 
-![image](https://github.com/user-attachments/assets/4b226801-b2bf-4706-b541-5f13e2891806)
-![image](https://github.com/user-attachments/assets/f8e67447-5efa-48fc-a18d-b989b1c751b9)
+![image](https://github.com/user-attachments/assets/3fd85d5c-a3c5-4854-8d39-61cce9b19448)
+![image](https://github.com/user-attachments/assets/5b99a530-7133-43a8-80eb-ce2fab25c96d)
+
 
 ---
 
