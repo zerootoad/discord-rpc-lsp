@@ -127,10 +127,10 @@ This LSP works with any editor that supports the Language Server Protocol (LSP).
    ```
 
 3. Replace `path/to/discord-rpc-lsp` with the actual path to the built binary.
-4. Add '"discord-rpc"' for the choosen languages:
+4. Add `"discord-rpc"` for the choosen languages:
    ```toml
    [[language]]
-   name = "go"
+   name = "go" # or any language of choice
    language-servers = [ "discord-rpc" ]
    ```
 
