@@ -23,7 +23,7 @@ type LSPHandler struct {
 
 func NewLSPHandler() *LSPHandler {
 	return &LSPHandler{
-        
+
 		Client: &client.Client{},
 	}
 }
@@ -113,7 +113,7 @@ func (h *LSPHandler) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 			log.Printf("File opened: %s (Language: %s)", fileName, h.CurrentLang)
 
 			go func() {
-				client.UpdateDiscordActivity("Watching", "Editing "+fileName, h.CurrentLang, h.Client.Editor, h.Client.GitRemoteURL, h.Client.GitBranchName)
+				client.UpdateDiscordActivity("", "Watching "+fileName, h.CurrentLang, h.Client.Editor, h.Client.GitRemoteURL, h.Client.GitBranchName)
 			}()
 
 		case "textDocument/didChange":
@@ -145,7 +145,7 @@ func (h *LSPHandler) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 			}
 
 			go func() {
-				client.UpdateDiscordActivity("Writing", "Editing "+fileName, h.CurrentLang, h.Client.Editor, h.Client.GitRemoteURL, h.Client.GitBranchName)
+				client.UpdateDiscordActivity("", "Editing "+fileName, h.CurrentLang, h.Client.Editor, h.Client.GitRemoteURL, h.Client.GitBranchName)
 			}()
 
 		default:
