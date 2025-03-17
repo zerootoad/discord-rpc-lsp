@@ -32,11 +32,21 @@ func UpdateDiscordActivity(state, details, currentLang, editor, gitRemoteURL, gi
 		smallText = "Coding in " + currentLang
 	}
 
+	largeImage := "https://raw.githubusercontent.com/zerootoad/discord-rich-presence-lsp/refs/heads/main/assets/icons/" + editor + ".png"
+	resp, err := http.Get(largeImage)
+	if resp.StatusCode != 200 || err != nil {
+		log.Printf("Large image not found, using text icon: %v", err)
+		largeImage = "https://raw.githubusercontent.com/zerootoad/discord-rich-presence-lsp/refs/heads/main/assets/icons/text.png"
+	} else {
+		log.Printf("Large image found: %v", largeImage)
+	}
+	defer resp.Body.Close()
+
 	now := time.Now()
 	activity := client.Activity{
 		State:      state,
 		Details:    details,
-		LargeImage: "https://raw.githubusercontent.com/zerootoad/discord-rich-presence-lsp/refs/heads/main/assets/icons/" + editor + ".png",
+		LargeImage: largeImage,
 		LargeText:  editor,
 		SmallImage: smallImage,
 		SmallText:  smallText,
@@ -55,7 +65,7 @@ func UpdateDiscordActivity(state, details, currentLang, editor, gitRemoteURL, gi
 		activity.Details += " (" + gitBranchName + ")"
 	}
 
-	err := client.SetActivity(activity)
+	err = client.SetActivity(activity)
 	if err != nil {
 		log.Printf("Failed to update Rich Presence: %v", err)
 	}
