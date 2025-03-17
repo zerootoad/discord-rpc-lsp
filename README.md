@@ -95,7 +95,20 @@ This LSP works with any editor that supports the Language Server Protocol (LSP).
 2. Add the following configuration to your `init.lua`:
 
    ```lua
-   soon..
+   local lspconfig = require('lspconfig')
+   local configs = require('lspconfig.configs')
+
+
+    configs.discord_rpc = {
+        default_config = {
+            cmd = { "path/to/discord-rpc-lsp" },
+            filetypes = {"*"}, -- Add relevant filetypes if needed
+            root_dir = function(fname)
+                return lspconfig.util.root_pattern('.git')(fname) or vim.fn.getcwd()
+            end,
+            settings = {},
+        },
+    }
    ```
 
 3. Replace `path/to/discord-rpc-lsp` with the actual path to the built binary.
