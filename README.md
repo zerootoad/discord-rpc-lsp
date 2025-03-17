@@ -21,10 +21,6 @@ A Language Server Protocol (LSP) to share what you're coding on Discord. This LS
 
 - [x] Fix issues with opening and closing files that cause the LSP to stop detecting changes. *(Possibly fixed)*
 - [x] Improve the rich presence embed. *(Mostly improved; needs additional details like line/column, diagnostics, etc.)*
-- [x] Add assets. *(Make a pull request or open an issue if you need an asset added.)*
-- [x] Improve code structure. *(Should be good enough for now.)*
-- [x] Implement structs to make activity handling easier.
-- [x] Fix the rich presence title. *(Turns out it was the application ID name; looking to implement a way to set it based on the editor being used.)*
 - [ ] Add easy configuration options.
 - [ ] Implement Idling
 
