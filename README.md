@@ -3,7 +3,8 @@
 A Language Server Protocol (LSP) to share what you're coding on Discord. This LSP integrates with your editor to display your current coding activity (file, language, and more) as a rich presence on Discord. 
 
 ![image](https://github.com/user-attachments/assets/383ba71d-c492-497f-a8c5-553d0363c24e)
-![image](https://github.com/user-attachments/assets/da7e4efb-d8c0-4d16-9817-ec2f0964a649)
+![image](https://github.com/user-attachments/assets/42b6a24e-b214-473c-9de9-1708c09d0a3a)
+
 
 
 ---
