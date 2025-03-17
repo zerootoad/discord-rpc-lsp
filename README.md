@@ -71,17 +71,7 @@ This LSP works with any editor that supports the Language Server Protocol (LSP).
 
 ---
 
-### **Visual Studio Code (VS Code)**
-
-1. Install the [LSP Extension](https://marketplace.visualstudio.com/items?itemName=matklad.lsp) if you don't already have it.
-2. Open your VS Code settings (`Ctrl + ,` or `Cmd + ,`).
-3. Add the following configuration to your `settings.json`:
-
-   ```json
-   soon..
-   ```
-
-4. Replace `path/to/discord-rpc-lsp` with the actual path to the built binary.
+### **Visual Studio Code (VS Code) WIP**
 
 ---
 
