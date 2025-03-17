@@ -166,7 +166,3 @@ This project is licensed under the GNU 3.0 License. See the [LICENSE](LICENSE) f
 - [LSP Specification](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/) for the LSP implementation.
 
 ---
-
-## Contributors
-**@zerootoad**
-**@nyrilol**
