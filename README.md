@@ -19,10 +19,7 @@ A Language Server Protocol (LSP) to share what you're coding on Discord. This LS
 
 ## TODO
 
-- [x] Fix issues with opening and closing files that cause the LSP to stop detecting changes. *(Possibly fixed)*
-- [x] Improve the rich presence embed. *(Mostly improved; needs additional details like line/column, diagnostics, etc.)*
-- [ ] Add easy configuration options.
-- [ ] Implement Idling
+- [ ] Add easy configuration.
 
 ---
 
