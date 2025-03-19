@@ -19,8 +19,9 @@ A Language Server Protocol (LSP) to share what you're coding on Discord. This LS
 
 ## TODO
 
+- [ ] LSP rewrite using glsp instead of go-lsp.
 - [ ] Add easy configuration.
-- [x] Idling
+- [x] Idling.
 
 ---
 
