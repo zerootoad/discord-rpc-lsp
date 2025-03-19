@@ -20,6 +20,7 @@ A Language Server Protocol (LSP) to share what you're coding on Discord. This LS
 ## TODO
 
 - [ ] Add easy configuration.
+- [x] Idling
 
 ---
 
