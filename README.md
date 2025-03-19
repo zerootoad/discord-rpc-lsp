@@ -123,7 +123,7 @@ This LSP works with any editor that supports the Language Server Protocol (LSP).
 
 ### **Other Editors**
 
-For other editors, refer to their documentation on how to configure LSP servers. The process is similar: specify the path to the `discord-rich-presence-lsp` binary in your editor's LSP configuration.
+For other editors, refer to their documentation on how to configure LSP servers. The process is similar: specify the path to the `discord-rpc-lsp` binary in your editor's LSP configuration.
 
 ---
 
