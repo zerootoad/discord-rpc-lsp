@@ -38,8 +38,8 @@ A Language Server Protocol (LSP) to share what you're coding on Discord. This LS
 1. **Clone the Repository**
 
    ```bash
-   git clone https://github.com/zerootoad/discord-rich-presence-lsp.git
-   cd discord-rich-presence-lsp
+   git clone https://github.com/zerootoad/discord-rpc-lsp.git
+   cd discord-rpc-lsp
    ```
 
 2. **Download Dependencies**
