@@ -16,7 +16,7 @@ func Logout() {
 	client.Logout()
 }
 
-func UpdateDiscordActivity(state, details, currentLang, editor, gitRemoteURL, gitBranchName string) {
+func UpdateDiscordActivity(state, details, currentLang, editor, gitRemoteURL, gitBranchName string, timestamp *time.Time) {
 	smallImage := ""
 	smallText := ""
 	if state != "Idling" {
@@ -42,7 +42,6 @@ func UpdateDiscordActivity(state, details, currentLang, editor, gitRemoteURL, gi
 	}
 	defer resp.Body.Close()
 
-	now := time.Now()
 	activity := client.Activity{
 		State:      state,
 		Details:    details,
@@ -50,6 +49,44 @@ func UpdateDiscordActivity(state, details, currentLang, editor, gitRemoteURL, gi
 		LargeText:  editor,
 		SmallImage: smallImage,
 		SmallText:  smallText,
+		Timestamps: &client.Timestamps{
+			Start: timestamp,
+		},
+	}
+
+	if gitRemoteURL != "" {
+		activity.Buttons = []*client.Button{
+			{
+				Label: "View Repository",
+				Url:   gitRemoteURL,
+			},
+		}
+		activity.Details += " (" + gitBranchName + ")"
+	}
+
+	err = client.SetActivity(activity)
+	if err != nil {
+		log.Printf("Failed to update Rich Presence: %v", err)
+	}
+}
+
+func ClearDiscordActivity(state, details, editor, gitRemoteURL, gitBranchName string) {
+	largeImage := "https://raw.githubusercontent.com/zerootoad/discord-rich-presence-lsp/refs/heads/main/assets/icons/" + editor + ".png"
+	resp, err := http.Get(largeImage)
+	if resp.StatusCode != 200 || err != nil {
+		log.Printf("Large image not found, using text icon: %v", err)
+		largeImage = "https://raw.githubusercontent.com/zerootoad/discord-rich-presence-lsp/refs/heads/main/assets/icons/text.png"
+	} else {
+		log.Printf("Large image found: %v", largeImage)
+	}
+	defer resp.Body.Close()
+
+	now := time.Now()
+	activity := client.Activity{
+		State:      state,
+		Details:    details,
+		LargeImage: largeImage,
+		LargeText:  editor,
 		Timestamps: &client.Timestamps{
 			Start: &now,
 		},

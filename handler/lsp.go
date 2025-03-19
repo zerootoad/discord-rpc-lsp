@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/sourcegraph/go-lsp"
@@ -17,12 +18,13 @@ import (
 )
 
 type LSPHandler struct {
-	Shutdown      bool
-	CurrentLang   string
-	IdleTimer     *time.Timer
-	Client        *client.Client
-	LangMaps      *client.LangMaps
-	ProblemsCount int
+	Shutdown    bool
+	CurrentLang string
+	IdleTimer   *time.Timer
+	Timeout     time.Duration
+	Client      *client.Client
+	LangMaps    *client.LangMaps
+	ElapsedTime *time.Time
 }
 
 func NewLSPHandler() (*LSPHandler, error) {
@@ -30,11 +32,27 @@ func NewLSPHandler() (*LSPHandler, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to load language maps: %w", err)
 	}
-
 	return &LSPHandler{
 		Client:   &client.Client{},
 		LangMaps: &langMaps,
+		Timeout:  1 * time.Minute,
 	}, nil
+}
+
+func (h *LSPHandler) ResetIdleTimer() {
+	if h.IdleTimer != nil {
+		h.IdleTimer.Stop()
+	}
+
+	if h.ElapsedTime == nil {
+		now := time.Now()
+		h.ElapsedTime = &now
+	}
+
+	h.IdleTimer = time.AfterFunc(h.Timeout, func() {
+		client.ClearDiscordActivity("In "+h.Client.WorkspaceName, "Idling", h.Client.Editor, h.Client.GitRemoteURL, h.Client.GitBranchName)
+		h.ElapsedTime = nil
+	})
 }
 
 func (h *LSPHandler) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) {
@@ -55,10 +73,11 @@ func (h *LSPHandler) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 				return
 			}
 
-			h.Client.Editor = params.ClientInfo.Name
+			h.Client.Editor = strings.ToLower(params.ClientInfo.Name)
 			h.Client.ApplicationID = ""
 			switch h.Client.Editor {
-			case "Neovim":
+			case "neovim":
+				h.Client.Editor = "nvim"                       // fix sum namin issues
 				h.Client.ApplicationID = "1351256847612514390" // Nvim
 			case "helix":
 				h.Client.ApplicationID = "1351256971059396679" // Helix
@@ -161,11 +180,12 @@ func (h *LSPHandler) didOpen(params lsp.DidOpenTextDocumentParams) {
 	if h.CurrentLang == "" {
 		h.CurrentLang = params.TextDocument.LanguageID
 	}
-
 	log.Printf("File opened: %s (Language: %s)", fileName, h.CurrentLang)
 
+	h.ResetIdleTimer()
+
 	go func() {
-		client.UpdateDiscordActivity("Watching "+fileName, "In "+h.Client.Editor, h.CurrentLang, h.Client.Editor, h.Client.GitRemoteURL, h.Client.GitBranchName)
+		client.UpdateDiscordActivity("Watching "+fileName, "In "+h.Client.WorkspaceName, h.CurrentLang, h.Client.Editor, h.Client.GitRemoteURL, h.Client.GitBranchName, h.ElapsedTime)
 	}()
 }
 
@@ -178,20 +198,25 @@ func (h *LSPHandler) didChange(params lsp.DidChangeTextDocumentParams) {
 	}
 	log.Printf("File changed: %s (Language: %s)", fileName, h.CurrentLang)
 
+	h.ResetIdleTimer()
+
 	go func() {
 		if len(params.ContentChanges) > 0 {
 			changes := params.ContentChanges[0]
 			if changes.Range != nil {
-				client.UpdateDiscordActivity("In line "+strconv.Itoa(changes.Range.Start.Line), "Editing "+fileName, h.CurrentLang, h.Client.Editor, h.Client.GitRemoteURL, h.Client.GitBranchName)
+				client.UpdateDiscordActivity("In line "+strconv.Itoa(changes.Range.Start.Line), "Editing "+fileName, h.CurrentLang, h.Client.Editor, h.Client.GitRemoteURL, h.Client.GitBranchName, h.ElapsedTime)
 			}
 		} else {
-			client.UpdateDiscordActivity("Editing "+fileName, "In "+h.Client.Editor, h.CurrentLang, h.Client.Editor, h.Client.GitRemoteURL, h.Client.GitBranchName)
+			client.UpdateDiscordActivity("Editing "+fileName, "In "+h.Client.WorkspaceName, h.CurrentLang, h.Client.Editor, h.Client.GitRemoteURL, h.Client.GitBranchName, h.ElapsedTime)
 		}
 	}()
 }
 
 func (h *LSPHandler) exit() {
 	log.Println("Exit notification received")
+	if h.IdleTimer != nil {
+		h.IdleTimer.Stop()
+	}
 	if h.Shutdown {
 		os.Exit(0)
 	} else {
