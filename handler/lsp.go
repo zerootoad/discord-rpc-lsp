@@ -77,8 +77,7 @@ func (h *LSPHandler) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 			h.Client.ApplicationID = ""
 			switch h.Client.Editor {
 			case "neovim":
-				h.Client.Editor = "nvim"                       // fix sum namin issues
-				h.Client.ApplicationID = "1351256847612514390" // Nvim
+				h.Client.ApplicationID = "1351256847612514390" // Neovim
 			case "helix":
 				h.Client.ApplicationID = "1351256971059396679" // Helix
 			default:

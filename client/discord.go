@@ -33,6 +33,9 @@ func UpdateDiscordActivity(state, details, currentLang, editor, gitRemoteURL, gi
 	}
 
 	largeImage := "https://raw.githubusercontent.com/zerootoad/discord-rich-presence-lsp/refs/heads/main/assets/icons/" + editor + ".png"
+	if editor == "neovim" {
+		largeImage = "https://raw.githubusercontent.com/zerootoad/discord-rich-presence-lsp/refs/heads/main/assets/icons/Nvemo.png"
+	}
 	resp, err := http.Get(largeImage)
 	if resp.StatusCode != 200 || err != nil {
 		log.Printf("Large image not found, using text icon: %v", err)
@@ -72,6 +75,9 @@ func UpdateDiscordActivity(state, details, currentLang, editor, gitRemoteURL, gi
 
 func ClearDiscordActivity(state, details, editor, gitRemoteURL, gitBranchName string) {
 	largeImage := "https://raw.githubusercontent.com/zerootoad/discord-rich-presence-lsp/refs/heads/main/assets/icons/" + editor + ".png"
+	if editor == "neovim" {
+		largeImage = "https://raw.githubusercontent.com/zerootoad/discord-rich-presence-lsp/refs/heads/main/assets/icons/Nvemo.png"
+	}
 	resp, err := http.Get(largeImage)
 	if resp.StatusCode != 200 || err != nil {
 		log.Printf("Large image not found, using text icon: %v", err)
