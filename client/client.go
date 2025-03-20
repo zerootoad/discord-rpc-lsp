@@ -2,6 +2,8 @@ package client
 
 import (
 	"github.com/go-git/go-git/v5"
+	"path/filepath"
+	"strings"
 )
 
 type Client struct {
@@ -14,6 +16,13 @@ type Client struct {
 }
 
 func GetGitRepositoryInfo(workspacePath string) (remoteURL, branchName string, err error) {
+	workspacePath = filepath.Clean(workspacePath)
+	if strings.HasPrefix(workspacePath, "file://") {
+		workspacePath = strings.TrimPrefix(workspacePath, "file://")
+	} else if strings.HasPrefix(workspacePath, "file:") {
+		workspacePath = strings.TrimPrefix(workspacePath, "file:")
+	}
+
 	repo, err := git.PlainOpen(workspacePath)
 	if err != nil {
 		return "", "", err

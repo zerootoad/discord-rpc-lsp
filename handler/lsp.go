@@ -96,9 +96,11 @@ func (h *LSPHandler) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 			}
 
 			h.Client.RootURI = string(params.RootURI)
+			log.Println(string(h.Client.RootURI))
 			h.Client.WorkspaceName = utils.GetFileName(h.Client.RootURI)
 
-			workspacePath := filepath.Dir(h.Client.RootURI)
+			workspacePath := filepath.Dir(h.Client.RootURI) + "/" + utils.GetFileName(h.Client.RootURI)
+			log.Println(string(workspacePath))
 			remoteUrl, branchName, err := client.GetGitRepositoryInfo(workspacePath)
 			if err != nil {
 				log.Printf("Failed to get git repository info: %v", err)

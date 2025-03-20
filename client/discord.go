@@ -58,6 +58,7 @@ func UpdateDiscordActivity(state, details, currentLang, editor, gitRemoteURL, gi
 	}
 
 	if gitRemoteURL != "" {
+		log.Println("Created buttons")
 		activity.Buttons = []*client.Button{
 			{
 				Label: "View Repository",
