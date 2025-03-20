@@ -21,7 +21,7 @@ A Language Server Protocol (LSP) to share what you're coding on Discord. This LS
 
 - [ ] LSP rewrite using glsp instead of go-lsp.
 - [ ] Add easy configuration.
-- [x] Idling.
+- [ ] Fix discord rich presence buttons not showing. (might be on discord side)
 
 ---
 
