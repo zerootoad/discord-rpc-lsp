@@ -20,7 +20,7 @@ A Language Server Protocol (LSP) to share what you're coding on Discord. This LS
 ## TODO
 
 - [x] LSP rewrite using glsp instead of go-lsp.
-- [ ] Add easy configuration.
+- [x] Add easy configuration. (pretty straight forward)
 - [ ] Fix discord rich presence buttons not showing. (might be on discord side)
 - [ ] Add diagnostics to the discord activity, beast guess: [refreshDiagnosticsOfDocument](https://github.com/zk-org/zk/blob/68e6b70eaefdf8344065fcec39d5419dc80d6a02/internal/adapter/lsp/server.go#L556)
 
@@ -134,8 +134,85 @@ For other editors, refer to their documentation on how to configure LSP servers.
 ---
 
 ## Configuration
+Configuration is done by editing the `config.toml` file located in the configuration directory. The configuration directory is automatically created in the following locations based on your operating system:
+- **Unix-based systems (Linux, macOS):** `~/.discord-rpc-lsp/`
+- **Windows:** `%APPDATA%\Roaming\.discord-rpc-lsp\`
 
-Currently, configuration is done by modifying the source code. Future updates will include a configuration file for easier customization.
+By default, if the config.toml file does not exist, it will be created with the following default values:
+```toml
+[discord]
+# application_id is the Discord Application ID for Rich Presence.
+# This is optional, as the lsp handles it based on the editor being used.
+application_id = ''
+
+# small_usage determines what is displayed in the small icon tooltip.
+# Valid values: "language" or "editor".
+small_usage = 'language'
+
+# large_usage determines what is displayed in the large icon tooltip.
+# Valid values: "language" or "editor".
+large_usage = 'editor'
+
+# retry_after is the duration to wait before retrying in case it fails to create the discord rpc client.
+# Must be a valid duration string (e.g., "1m", "30s").
+retry_after = '1m'
+
+[discord.activity]
+# The discord activity is customizable via placeholders.
+# List of avaible placeholder:
+# - {action} : holds the action being executed (e.g., "Idling", "Editing")
+# - {filename} : holds the name of current file.
+# - {workspace} : holds the workspace name.
+# - {editor} : holds the editor name (e.g., "helix", "neovim")
+# - {language} : holds the language name of the current file.
+
+# state is the first line of the activity status.
+# Supports placeholders: {action}, {filename}.
+state = '{action} {filename}'
+
+# details is the second line of the activity status.
+# Supports placeholders: {workspace}.
+details = 'In {workspace}'
+
+# large_image is the URL for the large icon.
+# Supports placeholders: {editor}.
+large_image = 'https://raw.githubusercontent.com/zerootoad/discord-rich-presence-lsp/main/assets/icons/{editor}.png'
+
+# large_text is the tooltip text for the large icon.
+# Supports placeholders: {editor}.
+large_text = '{editor}'
+
+# small_image is the URL for the small icon.
+# Supports placeholders: {language}.
+small_image = 'https://raw.githubusercontent.com/zerootoad/discord-rich-presence-lsp/main/assets/icons/{language}.png'
+
+# small_text is the tooltip text for the small icon.
+# Supports placeholders: {language}.
+small_text = 'Coding in {language}'
+
+# timestamp determines whether to display a timestamp in the activity.
+# If true, the time since the activity started will be shown.
+timestamp = true
+
+[lsp]
+# timeout is the duration after which the LSP will enable idling if no activity is detected.
+# Must be a valid duration string (e.g., "5m", "30s").
+timeout = '5m'
+
+[language_maps]
+# url is the URL to a JSON file containing mappings of file extensions to programming languages.
+url = 'https://raw.githubusercontent.com/zerootoad/discord-rich-presence-lsp/main/assets/languages.json'
+
+[logging]
+# level is the logging level.
+# Valid values: "debug", "info", "warn", "error".
+# Make sure to use debug if you're sumbitting an issue.
+level = 'info'
+
+# output is the output destination for logs.
+# Valid values: "file" (logs to a file) or "stdout" (logs to the console).
+output = 'file'
+```
 
 ---
 
