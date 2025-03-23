@@ -138,6 +138,8 @@ Configuration is done by editing the `config.toml` file located in the configura
 - **Unix-based systems (Linux, macOS):** `~/.discord-rpc-lsp/`
 - **Windows:** `%APPDATA%\Roaming\.discord-rpc-lsp\`
 
+*Make sure to make reference to the discord rich presence documentation for the fields.* [discord rpc docs](https://discord.com/developers/docs/rich-presence/using-with-the-game-sdk#understanding-rich-presence-data)
+
 By default, if the config.toml file does not exist, it will be created with the following default values:
 ```toml
 [discord]
@@ -159,7 +161,7 @@ retry_after = '1m'
 
 [discord.activity]
 # The discord activity is customizable via placeholders.
-# Make sure to make reference to the discord rich presence documentation for the fields. (https://discord.com/developers/docs/rich-presence/using-with-the-game-sdk#understanding-rich-presence-data)
+# 
 # List of avaible placeholder:
 # {action} : holds the action being executed (e.g., "Idling", "Editing")
 # {filename} : holds the name of current file.
