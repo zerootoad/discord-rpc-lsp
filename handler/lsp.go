@@ -46,12 +46,10 @@ func NewLSPHandler(name string, version string, config *utils.Config) (*LSPHandl
 		}).Error("Failed to load language maps")
 		return nil, fmt.Errorf("failed to load language maps: %w", err)
 	}
-	timeout, err := utils.ParseDuration(config.Lsp.Timeout)
+	timeout, err := time.ParseDuration(config.Lsp.Timeout)
 	if err != nil {
-		log.WithFields(log.Fields{
-			"error": err,
-		}).Error("Failed to parse timeout duration")
-		return nil, fmt.Errorf("failed to parse timeout duration: %w", err)
+		log.Errorf("Failed to parse timeout duration: %v", err)
+		timeout = 5 * time.Minute
 	}
 	return &LSPHandler{
 		Name:     name,
@@ -123,7 +121,7 @@ func (h *LSPHandler) initialize(ctx *glsp.Context, params *protocol.InitializePa
 		}
 	}
 
-	retryafter, err := utils.ParseDuration(h.Config.Discord.RetryAfter)
+	retryafter, err := time.ParseDuration(h.Config.Discord.RetryAfter)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error": err,

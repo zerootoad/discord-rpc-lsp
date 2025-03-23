@@ -6,8 +6,6 @@ import (
 	"path/filepath"
 	"reflect"
 	"runtime"
-	"strconv"
-	"strings"
 	"sync"
 	"time"
 
@@ -181,20 +179,6 @@ func LoadConfig(configFilePath string) (*Config, error) {
 				}
 			}
 		}
-
-		retryAfter, err := ParseDuration(config.Discord.RetryAfter)
-		if err != nil {
-			log.Errorf("Failed to parse retry_after duration: %v", err)
-			return nil, err
-		}
-		config.Discord.RetryAfter = retryAfter.String()
-
-		timeout, err := ParseDuration(config.Lsp.Timeout)
-		if err != nil {
-			log.Errorf("Failed to parse timeout duration: %v", err)
-			return nil, err
-		}
-		config.Lsp.Timeout = timeout.String()
 	}
 
 	return config, nil
@@ -222,47 +206,4 @@ func GetFileName(uri string) string {
 
 func GetFileExtension(uri string) string {
 	return filepath.Ext(uri)
-}
-
-func ParseDuration(s string) (time.Duration, error) {
-	if len(s) == 0 {
-		return 0, fmt.Errorf("empty duration string")
-	}
-
-	numStr := ""
-	i := 0
-	for ; i < len(s); i++ {
-		if s[i] >= '0' && s[i] <= '9' {
-			numStr += string(s[i])
-		} else {
-			break
-		}
-	}
-
-	if numStr == "" {
-		return 0, fmt.Errorf("no numeric part in duration string")
-	}
-
-	unit := s[i:]
-	num, err := strconv.Atoi(numStr)
-	if err != nil {
-		return 0, err
-	}
-
-	switch strings.ToLower(unit) {
-	case "ns":
-		return time.Duration(num) * time.Nanosecond, nil
-	case "us", "µs":
-		return time.Duration(num) * time.Microsecond, nil
-	case "ms":
-		return time.Duration(num) * time.Millisecond, nil
-	case "s":
-		return time.Duration(num) * time.Second, nil
-	case "m":
-		return time.Duration(num) * time.Minute, nil
-	case "h":
-		return time.Duration(num) * time.Hour, nil
-	default:
-		return 0, fmt.Errorf("unknown duration unit: %s", unit)
-	}
 }
