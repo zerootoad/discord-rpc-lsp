@@ -3,7 +3,7 @@
 A Language Server Protocol (LSP) to share what you're coding on Discord. This LSP integrates with your editor to display your current coding activity (file, language, and more) as a rich presence on Discord. 
 
 ![image](https://github.com/user-attachments/assets/3089b1ab-0f04-46d3-ae59-ed6207a853f4)
-![image](https://github.com/user-attachments/assets/a01f11aa-ee9c-4dd6-8aea-769a59ed565e)
+![image](https://github.com/user-attachments/assets/ddbd5f14-65f2-4ab0-a0c5-0b5eb3b36795)
 
 ---
 
@@ -19,7 +19,7 @@ A Language Server Protocol (LSP) to share what you're coding on Discord. This LS
 
 ## TODO
 
-- [ ] LSP rewrite using glsp instead of go-lsp.
+- [x] LSP rewrite using glsp instead of go-lsp.
 - [ ] Add easy configuration.
 - [ ] Fix discord rich presence buttons not showing. (might be on discord side)
 
