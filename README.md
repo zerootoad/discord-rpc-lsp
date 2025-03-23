@@ -22,7 +22,7 @@ A Language Server Protocol (LSP) to share what you're coding on Discord. This LS
 - [x] LSP rewrite using glsp instead of go-lsp.
 - [ ] Add easy configuration.
 - [ ] Fix discord rich presence buttons not showing. (might be on discord side)
-- [ ] Add diagnostics to the discord activity (Example: In line 51 - 0 problems)
+- [ ] Add diagnostics to the discord activity, beast guess: [refreshDiagnosticsOfDocument](https://github.com/zk-org/zk/blob/68e6b70eaefdf8344065fcec39d5419dc80d6a02/internal/adapter/lsp/server.go#L556)
 
 ---
 
