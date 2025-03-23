@@ -1,12 +1,9 @@
 package main
 
 import (
-	"context"
 	"log"
 	"os"
 	"path/filepath"
-
-	"github.com/sourcegraph/jsonrpc2"
 
 	"github.com/zerootoad/discord-rpc-lsp/handler"
 	"github.com/zerootoad/discord-rpc-lsp/utils"
@@ -30,30 +27,11 @@ func main() {
 
 	log.SetOutput(logFile)
 
-	lspHandler, err := handler.NewLSPHandler()
+	lspHandler, err := handler.NewLSPHandler("discord-rpc-lsp", "0.0.4")
 	if err != nil {
 		log.Fatalf("Failed to create LSP handler: %v", err)
 	}
 
-	stream := jsonrpc2.NewBufferedStream(stdrwc{}, jsonrpc2.VSCodeObjectCodec{})
-	conn := jsonrpc2.NewConn(context.Background(), stream, lspHandler)
-
-	log.Println("LSP server started!")
-	<-conn.DisconnectNotify()
-	log.Println("LSP server stopped!")
-}
-
-// stdin n stdout bs
-type stdrwc struct{}
-
-func (stdrwc) Read(p []byte) (int, error) {
-	return os.Stdin.Read(p)
-}
-
-func (stdrwc) Write(p []byte) (int, error) {
-	return os.Stdout.Write(p)
-}
-
-func (stdrwc) Close() error {
-	return nil
+	server := lspHandler.NewServer()
+	server.RunStdio()
 }

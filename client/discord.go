@@ -45,16 +45,29 @@ func UpdateDiscordActivity(state, details, currentLang, editor, gitRemoteURL, gi
 	}
 	defer resp.Body.Close()
 
-	activity := client.Activity{
-		State:      state,
-		Details:    details,
-		LargeImage: largeImage,
-		LargeText:  editor,
-		SmallImage: smallImage,
-		SmallText:  smallText,
-		Timestamps: &client.Timestamps{
-			Start: timestamp,
-		},
+	activity := client.Activity{}
+	if currentLang == "" {
+		activity = client.Activity{
+			State:      state,
+			Details:    details,
+			LargeImage: largeImage,
+			LargeText:  editor,
+			Timestamps: &client.Timestamps{
+				Start: timestamp,
+			},
+		}
+	} else {
+		activity = client.Activity{
+			State:      state,
+			Details:    details,
+			LargeImage: largeImage,
+			LargeText:  editor,
+			SmallImage: smallImage,
+			SmallText:  smallText,
+			Timestamps: &client.Timestamps{
+				Start: timestamp,
+			},
+		}
 	}
 
 	if gitRemoteURL != "" {
