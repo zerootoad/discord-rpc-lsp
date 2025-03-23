@@ -159,35 +159,30 @@ retry_after = '1m'
 
 [discord.activity]
 # The discord activity is customizable via placeholders.
+# Make sure to make reference to the discord rich presence documentation for the fields. (https://discord.com/developers/docs/rich-presence/using-with-the-game-sdk#understanding-rich-presence-data)
 # List of avaible placeholder:
-# - {action} : holds the action being executed (e.g., "Idling", "Editing")
-# - {filename} : holds the name of current file.
-# - {workspace} : holds the workspace name.
-# - {editor} : holds the editor name (e.g., "helix", "neovim")
-# - {language} : holds the language name of the current file.
+# {action} : holds the action being executed (e.g., "Idling", "Editing")
+# {filename} : holds the name of current file.
+# {workspace} : holds the workspace name.
+# {editor} : holds the editor name (e.g., "helix", "neovim")
+# {language} : holds the language name of the current file.
 
 # state is the first line of the activity status.
-# Supports placeholders: {action}, {filename}.
 state = '{action} {filename}'
 
 # details is the second line of the activity status.
-# Supports placeholders: {workspace}.
 details = 'In {workspace}'
 
 # large_image is the URL for the large icon.
-# Supports placeholders: {editor}.
 large_image = 'https://raw.githubusercontent.com/zerootoad/discord-rich-presence-lsp/main/assets/icons/{editor}.png'
 
 # large_text is the tooltip text for the large icon.
-# Supports placeholders: {editor}.
 large_text = '{editor}'
 
 # small_image is the URL for the small icon.
-# Supports placeholders: {language}.
 small_image = 'https://raw.githubusercontent.com/zerootoad/discord-rich-presence-lsp/main/assets/icons/{language}.png'
 
 # small_text is the tooltip text for the small icon.
-# Supports placeholders: {language}.
 small_text = 'Coding in {language}'
 
 # timestamp determines whether to display a timestamp in the activity.
