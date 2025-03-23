@@ -2,12 +2,14 @@ package handler
 
 import (
 	"fmt"
-	log "github.com/sirupsen/logrus"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/tliron/glsp"
 	protocol "github.com/tliron/glsp/protocol_3_16"
@@ -27,27 +29,37 @@ type LSPHandler struct {
 	Client      *client.Client
 	LangMaps    *client.LangMaps
 	ElapsedTime *time.Time
+	Config      *utils.Config
+	Mutex       sync.Mutex
 }
 
-func NewLSPHandler(name string, version string) (*LSPHandler, error) {
+func NewLSPHandler(name string, version string, config *utils.Config) (*LSPHandler, error) {
 	log.WithFields(log.Fields{
 		"name":    name,
 		"version": version,
 	}).Info("Creating new LSP handler")
 
-	langMaps, err := client.LoadLangMaps("https://raw.githubusercontent.com/zerootoad/discord-rich-presence-lsp/refs/heads/main/assets/languages.json")
+	langMaps, err := client.LoadLangMaps(config.LanguageMaps.URL)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error": err,
 		}).Error("Failed to load language maps")
 		return nil, fmt.Errorf("failed to load language maps: %w", err)
 	}
+	timeout, err := utils.ParseDuration(config.Lsp.Timeout)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error": err,
+		}).Error("Failed to parse timeout duration")
+		return nil, fmt.Errorf("failed to parse timeout duration: %w", err)
+	}
 	return &LSPHandler{
 		Name:     name,
 		Version:  version,
 		Client:   &client.Client{},
 		LangMaps: &langMaps,
-		Timeout:  5 * time.Minute,
+		Timeout:  timeout,
+		Config:   config,
 	}, nil
 }
 
@@ -62,7 +74,7 @@ func (h *LSPHandler) ResetIdleTimer() {
 	}
 
 	h.IdleTimer = time.AfterFunc(h.Timeout, func() {
-		err := client.ClearDiscordActivity("In "+h.Client.WorkspaceName, "Idling", h.Client.Editor, h.Client.GitRemoteURL, h.Client.GitBranchName)
+		err := client.ClearDiscordActivity(h.Config, "Idling", "", h.Client.WorkspaceName, h.Client.Editor, h.Client.GitRemoteURL, h.Client.GitBranchName)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"error": err,
@@ -98,13 +110,25 @@ func (h *LSPHandler) initialize(ctx *glsp.Context, params *protocol.InitializePa
 
 	h.Client.Editor = strings.ToLower(params.ClientInfo.Name)
 	h.Client.ApplicationID = ""
-	switch h.Client.Editor {
-	case "neovim":
-		h.Client.ApplicationID = "1352048301633044521" // Neovim
-	case "helix":
-		h.Client.ApplicationID = "1351256971059396679" // Helix
-	default:
-		h.Client.ApplicationID = "1351257618227920896" // Code
+	if h.Config.Discord.ApplicationID != "" {
+		h.Client.ApplicationID = h.Config.Discord.ApplicationID
+	} else {
+		switch h.Client.Editor {
+		case "neovim":
+			h.Client.ApplicationID = "1352048301633044521" // Neovim
+		case "helix":
+			h.Client.ApplicationID = "1351256971059396679" // Helix
+		default:
+			h.Client.ApplicationID = "1351257618227920896" // Code
+		}
+	}
+
+	retryafter, err := utils.ParseDuration(h.Config.Discord.RetryAfter)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error": err,
+		}).Error("Failed to parse retry_after duration using 1 minute")
+		retryafter = 1 * time.Minute
 	}
 	for {
 		err := client.Login(string(h.Client.ApplicationID))
@@ -116,7 +140,7 @@ func (h *LSPHandler) initialize(ctx *glsp.Context, params *protocol.InitializePa
 			"error": err,
 		}).Error("Failed to create Discord RPC client, retrying in 1 minute")
 
-		time.Sleep(1 * time.Minute)
+		time.Sleep(retryafter)
 	}
 
 	h.Client.RootURI = string(*params.RootURI)
@@ -161,6 +185,9 @@ func (h *LSPHandler) setTrace(ctx *glsp.Context, params *protocol.SetTraceParams
 }
 
 func (h *LSPHandler) shutdown(ctx *glsp.Context) error {
+	h.Mutex.Lock()
+	defer h.Mutex.Unlock()
+
 	h.Shutdown = true
 	log.Info("Shutdown request received")
 	client.Logout()
@@ -183,6 +210,9 @@ func (h *LSPHandler) exit(ctx *glsp.Context) error {
 }
 
 func (h *LSPHandler) didOpen(ctx *glsp.Context, params *protocol.DidOpenTextDocumentParams) error {
+	h.Mutex.Lock()
+	defer h.Mutex.Unlock()
+
 	fileName := utils.GetFileName(string(params.TextDocument.URI))
 	h.CurrentLang = h.LangMaps.GetLanguage(fileName)
 	if h.CurrentLang == "" {
@@ -198,7 +228,7 @@ func (h *LSPHandler) didOpen(ctx *glsp.Context, params *protocol.DidOpenTextDocu
 	h.ResetIdleTimer()
 
 	go func() {
-		err := client.UpdateDiscordActivity("Watching "+fileName, "In "+h.Client.WorkspaceName, h.CurrentLang, h.Client.Editor, h.Client.GitRemoteURL, h.Client.GitBranchName, h.ElapsedTime)
+		err := client.UpdateDiscordActivity(h.Config, "Viewing", fileName, h.Client.WorkspaceName, h.CurrentLang, h.Client.Editor, h.Client.GitRemoteURL, h.Client.GitBranchName, h.ElapsedTime)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"error": err,
@@ -210,6 +240,9 @@ func (h *LSPHandler) didOpen(ctx *glsp.Context, params *protocol.DidOpenTextDocu
 }
 
 func (h *LSPHandler) didClose(ctx *glsp.Context, params *protocol.DidCloseTextDocumentParams) error {
+	h.Mutex.Lock()
+	defer h.Mutex.Unlock()
+
 	fileName := utils.GetFileName(string(params.TextDocument.URI))
 
 	log.WithFields(log.Fields{
@@ -223,7 +256,7 @@ func (h *LSPHandler) didClose(ctx *glsp.Context, params *protocol.DidCloseTextDo
 	}
 
 	go func() {
-		err := client.UpdateDiscordActivity("No file open", "In "+h.Client.WorkspaceName, "", h.Client.Editor, h.Client.GitRemoteURL, h.Client.GitBranchName, h.ElapsedTime)
+		err := client.UpdateDiscordActivity(h.Config, "No file open", "", h.Client.WorkspaceName, "", h.Client.Editor, h.Client.GitRemoteURL, h.Client.GitBranchName, h.ElapsedTime)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"error": err,
@@ -235,6 +268,9 @@ func (h *LSPHandler) didClose(ctx *glsp.Context, params *protocol.DidCloseTextDo
 }
 
 func (h *LSPHandler) didChange(ctx *glsp.Context, params *protocol.DidChangeTextDocumentParams) error {
+	h.Mutex.Lock()
+	defer h.Mutex.Unlock()
+
 	fileName := utils.GetFileName(string(params.TextDocument.URI))
 	h.CurrentLang = h.LangMaps.GetLanguage(fileName)
 	if h.CurrentLang == "" {
@@ -262,7 +298,7 @@ func (h *LSPHandler) didChange(ctx *glsp.Context, params *protocol.DidChangeText
 				} else {
 					activity = "Editing " + fileName
 				}
-				err := client.UpdateDiscordActivity(activity, "In "+h.Client.WorkspaceName, h.CurrentLang, h.Client.Editor, h.Client.GitRemoteURL, h.Client.GitBranchName, h.ElapsedTime)
+				err := client.UpdateDiscordActivity(h.Config, activity, "", h.Client.WorkspaceName, h.CurrentLang, h.Client.Editor, h.Client.GitRemoteURL, h.Client.GitBranchName, h.ElapsedTime)
 				if err != nil {
 					log.WithFields(log.Fields{
 						"error": err,
@@ -270,7 +306,7 @@ func (h *LSPHandler) didChange(ctx *glsp.Context, params *protocol.DidChangeText
 				}
 
 			case protocol.TextDocumentContentChangeEventWhole:
-				err := client.UpdateDiscordActivity("Editing "+fileName, "In "+h.Client.WorkspaceName, h.CurrentLang, h.Client.Editor, h.Client.GitRemoteURL, h.Client.GitBranchName, h.ElapsedTime)
+				err := client.UpdateDiscordActivity(h.Config, "Editing", fileName, h.Client.WorkspaceName, h.CurrentLang, h.Client.Editor, h.Client.GitRemoteURL, h.Client.GitBranchName, h.ElapsedTime)
 				if err != nil {
 					log.WithFields(log.Fields{
 						"error": err,
@@ -278,10 +314,10 @@ func (h *LSPHandler) didChange(ctx *glsp.Context, params *protocol.DidChangeText
 				}
 
 			default:
+				err := client.UpdateDiscordActivity(h.Config, "Editing", fileName, h.Client.WorkspaceName, h.CurrentLang, h.Client.Editor, h.Client.GitRemoteURL, h.Client.GitBranchName, h.ElapsedTime)
 				log.WithFields(log.Fields{
 					"changeType": fmt.Sprintf("%T", change),
 				}).Warn("Unknown content change type")
-				err := client.UpdateDiscordActivity("Editing "+fileName, "In "+h.Client.WorkspaceName, h.CurrentLang, h.Client.Editor, h.Client.GitRemoteURL, h.Client.GitBranchName, h.ElapsedTime)
 				if err != nil {
 					log.WithFields(log.Fields{
 						"error": err,
@@ -289,7 +325,7 @@ func (h *LSPHandler) didChange(ctx *glsp.Context, params *protocol.DidChangeText
 				}
 			}
 		} else {
-			err := client.UpdateDiscordActivity("Editing "+fileName, "In "+h.Client.WorkspaceName, h.CurrentLang, h.Client.Editor, h.Client.GitRemoteURL, h.Client.GitBranchName, h.ElapsedTime)
+			err := client.UpdateDiscordActivity(h.Config, "Editing", fileName, h.Client.WorkspaceName, h.CurrentLang, h.Client.Editor, h.Client.GitRemoteURL, h.Client.GitBranchName, h.ElapsedTime)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"error": err,

@@ -31,22 +31,55 @@ func main() {
 	}
 	defer logFile.Close()
 
-	log.SetOutput(logFile)
+	configFilePath := filepath.Join(configDir, "config.toml")
+	config, err := utils.LoadConfig(configFilePath)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"configFilePath": configFilePath,
+			"error":          err,
+		}).Fatal("Failed to load or create configuration")
+	}
+
+	switch config.Logging.Level {
+	case "debug":
+		log.SetLevel(log.DebugLevel)
+	case "info":
+		log.SetLevel(log.InfoLevel)
+	case "warn":
+		log.SetLevel(log.WarnLevel)
+	case "error":
+		log.SetLevel(log.ErrorLevel)
+	default:
+		log.SetLevel(log.InfoLevel)
+		log.Warnf("Invalid logging level '%s' in config. Defaulting to 'info'.", config.Logging.Level)
+	}
+
+	switch config.Logging.Output {
+	case "file":
+		log.SetOutput(logFile)
+	case "stdout":
+		log.SetOutput(os.Stdout)
+	default:
+		log.SetOutput(os.Stdout)
+		log.Warnf("Invalid logging output '%s' in config. Defaulting to 'stdout'.", config.Logging.Output)
+	}
+
 	log.SetFormatter(&log.JSONFormatter{})
-	log.SetLevel(log.InfoLevel)
 
-	log.AddHook(&writerHook{
-		Writer: os.Stdout,
-		LogLevels: []log.Level{
-			log.InfoLevel,
-			log.WarnLevel,
-			log.ErrorLevel,
-			log.FatalLevel,
-			log.PanicLevel,
-		},
-	})
+	if config.Logging.Output == "file" {
+		log.AddHook(&writerHook{
+			Writer: os.Stdout,
+			LogLevels: []log.Level{
+				log.InfoLevel,
+				log.WarnLevel,
+				log.ErrorLevel,
+				log.FatalLevel,
+				log.PanicLevel,
+			},
+		})
+	}
 
-	lspHandler, err := handler.NewLSPHandler("discord-rpc-lsp", "0.0.4")
+	lspHandler, err := handler.NewLSPHandler("discord-rpc-lsp", "0.0.5", config)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error": err,
