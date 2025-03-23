@@ -8,6 +8,11 @@ import (
 
 func GetUserHomeDir() string {
 	if runtime.GOOS == "windows" {
+		roamingPath := os.Getenv("APPDATA")
+		if roamingPath != "" {
+			return roamingPath
+		}
+
 		home := os.Getenv("HOMEDRIVE") + os.Getenv("HOMEPATH")
 		if home == "" {
 			home = os.Getenv("USERPROFILE")

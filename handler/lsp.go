@@ -2,7 +2,7 @@ package handler
 
 import (
 	"fmt"
-	"log"
+	log "github.com/sirupsen/logrus"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -30,8 +30,16 @@ type LSPHandler struct {
 }
 
 func NewLSPHandler(name string, version string) (*LSPHandler, error) {
+	log.WithFields(log.Fields{
+		"name":    name,
+		"version": version,
+	}).Info("Creating new LSP handler")
+
 	langMaps, err := client.LoadLangMaps("https://raw.githubusercontent.com/zerootoad/discord-rich-presence-lsp/refs/heads/main/assets/languages.json")
 	if err != nil {
+		log.WithFields(log.Fields{
+			"error": err,
+		}).Error("Failed to load language maps")
 		return nil, fmt.Errorf("failed to load language maps: %w", err)
 	}
 	return &LSPHandler{
@@ -54,7 +62,12 @@ func (h *LSPHandler) ResetIdleTimer() {
 	}
 
 	h.IdleTimer = time.AfterFunc(h.Timeout, func() {
-		client.ClearDiscordActivity("In "+h.Client.WorkspaceName, "Idling", h.Client.Editor, h.Client.GitRemoteURL, h.Client.GitBranchName)
+		err := client.ClearDiscordActivity("In "+h.Client.WorkspaceName, "Idling", h.Client.Editor, h.Client.GitRemoteURL, h.Client.GitBranchName)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error": err,
+			}).Error("Failed to update Discord activity")
+		}
 		h.ElapsedTime = nil
 	})
 }
@@ -77,7 +90,10 @@ func (h *LSPHandler) NewServer() *server.Server {
 }
 
 func (h *LSPHandler) initialize(ctx *glsp.Context, params *protocol.InitializeParams) (any, error) {
-	log.Printf("Initializing server, params: %v", params)
+	log.WithFields(log.Fields{
+		"params": params,
+	}).Info("Initializing server")
+
 	capabilities := h.Handler.CreateServerCapabilities()
 
 	h.Client.Editor = strings.ToLower(params.ClientInfo.Name)
@@ -96,20 +112,30 @@ func (h *LSPHandler) initialize(ctx *glsp.Context, params *protocol.InitializePa
 			break
 		}
 
-		log.Fatalf("Failed to create Discord RPC client: %v (retrying in 1 minute)", err)
+		log.WithFields(log.Fields{
+			"error": err,
+		}).Error("Failed to create Discord RPC client, retrying in 1 minute")
 
 		time.Sleep(1 * time.Minute)
 	}
 
 	h.Client.RootURI = string(*params.RootURI)
-	log.Println(string(h.Client.RootURI))
+	log.WithFields(log.Fields{
+		"rootURI": h.Client.RootURI,
+	}).Info("Root URI set")
+
 	h.Client.WorkspaceName = utils.GetFileName(h.Client.RootURI)
 
 	workspacePath := filepath.Dir(h.Client.RootURI) + "/" + utils.GetFileName(h.Client.RootURI)
-	log.Println(string(workspacePath))
+	log.WithFields(log.Fields{
+		"workspacePath": workspacePath,
+	}).Info("Workspace path set")
+
 	remoteUrl, branchName, err := client.GetGitRepositoryInfo(workspacePath)
 	if err != nil {
-		log.Printf("Failed to get git repository info: %v", err)
+		log.WithFields(log.Fields{
+			"error": err,
+		}).Error("Failed to get git repository info")
 	} else {
 		h.Client.GitRemoteURL = remoteUrl
 		h.Client.GitBranchName = branchName
@@ -125,7 +151,7 @@ func (h *LSPHandler) initialize(ctx *glsp.Context, params *protocol.InitializePa
 }
 
 func (h *LSPHandler) initialized(ctx *glsp.Context, params *protocol.InitializedParams) error {
-	log.Println("Initialized server")
+	log.Info("Initialized server")
 	return nil
 }
 
@@ -136,14 +162,14 @@ func (h *LSPHandler) setTrace(ctx *glsp.Context, params *protocol.SetTraceParams
 
 func (h *LSPHandler) shutdown(ctx *glsp.Context) error {
 	h.Shutdown = true
-	log.Println("Shutdown request received")
+	log.Info("Shutdown request received")
 	client.Logout()
 
 	return nil
 }
 
 func (h *LSPHandler) exit(ctx *glsp.Context) error {
-	log.Println("Exit notification received")
+	log.Info("Exit notification received")
 	if h.IdleTimer != nil {
 		h.IdleTimer.Stop()
 	}
@@ -158,17 +184,26 @@ func (h *LSPHandler) exit(ctx *glsp.Context) error {
 
 func (h *LSPHandler) didOpen(ctx *glsp.Context, params *protocol.DidOpenTextDocumentParams) error {
 	fileName := utils.GetFileName(string(params.TextDocument.URI))
-
 	h.CurrentLang = h.LangMaps.GetLanguage(fileName)
 	if h.CurrentLang == "" {
 		h.CurrentLang = params.TextDocument.LanguageID
 	}
-	log.Printf("File opened: %s (Language: %s)", fileName, h.CurrentLang)
+
+	log.WithFields(log.Fields{
+		"fileName": fileName,
+		"language": h.CurrentLang,
+		"params":   params,
+	}).Info("Opened file")
 
 	h.ResetIdleTimer()
 
 	go func() {
-		client.UpdateDiscordActivity("Watching "+fileName, "In "+h.Client.WorkspaceName, h.CurrentLang, h.Client.Editor, h.Client.GitRemoteURL, h.Client.GitBranchName, h.ElapsedTime)
+		err := client.UpdateDiscordActivity("Watching "+fileName, "In "+h.Client.WorkspaceName, h.CurrentLang, h.Client.Editor, h.Client.GitRemoteURL, h.Client.GitBranchName, h.ElapsedTime)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error": err,
+			}).Error("Failed to update Discord activity")
+		}
 	}()
 
 	return nil
@@ -177,7 +212,9 @@ func (h *LSPHandler) didOpen(ctx *glsp.Context, params *protocol.DidOpenTextDocu
 func (h *LSPHandler) didClose(ctx *glsp.Context, params *protocol.DidCloseTextDocumentParams) error {
 	fileName := utils.GetFileName(string(params.TextDocument.URI))
 
-	log.Printf("File closed: %s", fileName)
+	log.WithFields(log.Fields{
+		"fileName": fileName,
+	}).Info("File closed")
 
 	h.ResetIdleTimer()
 
@@ -186,7 +223,12 @@ func (h *LSPHandler) didClose(ctx *glsp.Context, params *protocol.DidCloseTextDo
 	}
 
 	go func() {
-		client.UpdateDiscordActivity("No file open", "In "+h.Client.WorkspaceName, "", h.Client.Editor, h.Client.GitRemoteURL, h.Client.GitBranchName, h.ElapsedTime)
+		err := client.UpdateDiscordActivity("No file open", "In "+h.Client.WorkspaceName, "", h.Client.Editor, h.Client.GitRemoteURL, h.Client.GitBranchName, h.ElapsedTime)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error": err,
+			}).Error("Failed to update Discord activity")
+		}
 	}()
 
 	return nil
@@ -194,12 +236,16 @@ func (h *LSPHandler) didClose(ctx *glsp.Context, params *protocol.DidCloseTextDo
 
 func (h *LSPHandler) didChange(ctx *glsp.Context, params *protocol.DidChangeTextDocumentParams) error {
 	fileName := utils.GetFileName(string(params.TextDocument.URI))
-
 	h.CurrentLang = h.LangMaps.GetLanguage(fileName)
 	if h.CurrentLang == "" {
 		h.CurrentLang = "text"
 	}
-	log.Printf("File changed: %s (Language: %s)", fileName, h.CurrentLang)
+
+	log.WithFields(log.Fields{
+		"fileName": fileName,
+		"language": h.CurrentLang,
+		"params":   params,
+	}).Info("Changed file")
 
 	h.ResetIdleTimer()
 
@@ -209,22 +255,46 @@ func (h *LSPHandler) didChange(ctx *glsp.Context, params *protocol.DidChangeText
 
 			switch change := change.(type) {
 			case protocol.TextDocumentContentChangeEvent:
+				var activity string
 				if change.Range != nil {
 					line := change.Range.Start.Line
-					client.UpdateDiscordActivity("In line "+strconv.Itoa(int(line)), "Editing "+fileName, h.CurrentLang, h.Client.Editor, h.Client.GitRemoteURL, h.Client.GitBranchName, h.ElapsedTime)
+					activity = "In line " + strconv.Itoa(int(line))
 				} else {
-					client.UpdateDiscordActivity("Editing "+fileName, "In "+h.Client.WorkspaceName, h.CurrentLang, h.Client.Editor, h.Client.GitRemoteURL, h.Client.GitBranchName, h.ElapsedTime)
+					activity = "Editing " + fileName
+				}
+				err := client.UpdateDiscordActivity(activity, "In "+h.Client.WorkspaceName, h.CurrentLang, h.Client.Editor, h.Client.GitRemoteURL, h.Client.GitBranchName, h.ElapsedTime)
+				if err != nil {
+					log.WithFields(log.Fields{
+						"error": err,
+					}).Error("Failed to update Discord activity")
 				}
 
 			case protocol.TextDocumentContentChangeEventWhole:
-				client.UpdateDiscordActivity("Editing "+fileName, "In "+h.Client.WorkspaceName, h.CurrentLang, h.Client.Editor, h.Client.GitRemoteURL, h.Client.GitBranchName, h.ElapsedTime)
+				err := client.UpdateDiscordActivity("Editing "+fileName, "In "+h.Client.WorkspaceName, h.CurrentLang, h.Client.Editor, h.Client.GitRemoteURL, h.Client.GitBranchName, h.ElapsedTime)
+				if err != nil {
+					log.WithFields(log.Fields{
+						"error": err,
+					}).Error("Failed to update Discord activity")
+				}
 
 			default:
-				log.Printf("Unknown content change type: %T", change)
-				client.UpdateDiscordActivity("Editing "+fileName, "In "+h.Client.WorkspaceName, h.CurrentLang, h.Client.Editor, h.Client.GitRemoteURL, h.Client.GitBranchName, h.ElapsedTime)
+				log.WithFields(log.Fields{
+					"changeType": fmt.Sprintf("%T", change),
+				}).Warn("Unknown content change type")
+				err := client.UpdateDiscordActivity("Editing "+fileName, "In "+h.Client.WorkspaceName, h.CurrentLang, h.Client.Editor, h.Client.GitRemoteURL, h.Client.GitBranchName, h.ElapsedTime)
+				if err != nil {
+					log.WithFields(log.Fields{
+						"error": err,
+					}).Error("Failed to update Discord activity")
+				}
 			}
 		} else {
-			client.UpdateDiscordActivity("Editing "+fileName, "In "+h.Client.WorkspaceName, h.CurrentLang, h.Client.Editor, h.Client.GitRemoteURL, h.Client.GitBranchName, h.ElapsedTime)
+			err := client.UpdateDiscordActivity("Editing "+fileName, "In "+h.Client.WorkspaceName, h.CurrentLang, h.Client.Editor, h.Client.GitRemoteURL, h.Client.GitBranchName, h.ElapsedTime)
+			if err != nil {
+				log.WithFields(log.Fields{
+					"error": err,
+				}).Error("Failed to update Discord activity")
+			}
 		}
 	}()
 

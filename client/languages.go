@@ -3,7 +3,6 @@ package client
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"regexp"
 
@@ -38,9 +37,7 @@ func LoadLangMaps(url string) (LangMaps, error) {
 func (l *LangMaps) GetLanguage(fileName string) string {
 	ext := utils.GetFileExtension(fileName)
 
-	log.Println("Checking for language by extension:", ext)
 	if lang, ok := l.ExtMap[ext]; ok {
-		log.Println("Found language by extension:", lang)
 		return lang
 	}
 
@@ -52,7 +49,6 @@ func (l *LangMaps) GetLanguage(fileName string) string {
 		}
 
 		if re.MatchString(fileName) {
-			log.Println("Found language by regex:", lang)
 			return lang
 		}
 	}

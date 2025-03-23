@@ -1,7 +1,6 @@
 package client
 
 import (
-	"log"
 	"net/http"
 	"time"
 
@@ -16,14 +15,13 @@ func Logout() {
 	client.Logout()
 }
 
-func UpdateDiscordActivity(state, details, currentLang, editor, gitRemoteURL, gitBranchName string, timestamp *time.Time) {
+func UpdateDiscordActivity(state, details, currentLang, editor, gitRemoteURL, gitBranchName string, timestamp *time.Time) error {
 	smallImage := ""
 	smallText := ""
 	if state != "Idling" {
 		smallImage = "https://raw.githubusercontent.com/zerootoad/discord-rich-presence-lsp/refs/heads/main/assets/icons/" + currentLang + ".png"
 		resp, err := http.Get(smallImage)
 		if resp.StatusCode != 200 || err != nil {
-			log.Printf("Small image not found, using text icon: %v", err)
 			smallImage = "https://raw.githubusercontent.com/zerootoad/discord-rich-presence-lsp/refs/heads/main/assets/icons/text.png"
 		}
 
@@ -38,10 +36,7 @@ func UpdateDiscordActivity(state, details, currentLang, editor, gitRemoteURL, gi
 	}
 	resp, err := http.Get(largeImage)
 	if resp.StatusCode != 200 || err != nil {
-		log.Printf("Large image not found, using text icon: %v", err)
 		largeImage = "https://raw.githubusercontent.com/zerootoad/discord-rich-presence-lsp/refs/heads/main/assets/icons/text.png"
-	} else {
-		log.Printf("Large image found: %v", largeImage)
 	}
 	defer resp.Body.Close()
 
@@ -71,7 +66,6 @@ func UpdateDiscordActivity(state, details, currentLang, editor, gitRemoteURL, gi
 	}
 
 	if gitRemoteURL != "" {
-		log.Println("Created buttons")
 		activity.Buttons = []*client.Button{
 			{
 				Label: "View Repository",
@@ -81,23 +75,17 @@ func UpdateDiscordActivity(state, details, currentLang, editor, gitRemoteURL, gi
 		activity.Details += " (" + gitBranchName + ")"
 	}
 
-	err = client.SetActivity(activity)
-	if err != nil {
-		log.Printf("Failed to update Rich Presence: %v", err)
-	}
+	return client.SetActivity(activity)
 }
 
-func ClearDiscordActivity(state, details, editor, gitRemoteURL, gitBranchName string) {
+func ClearDiscordActivity(state, details, editor, gitRemoteURL, gitBranchName string) error {
 	largeImage := "https://raw.githubusercontent.com/zerootoad/discord-rich-presence-lsp/refs/heads/main/assets/icons/" + editor + ".png"
 	if editor == "neovim" {
 		largeImage = "https://raw.githubusercontent.com/zerootoad/discord-rich-presence-lsp/refs/heads/main/assets/icons/Nvemo.png"
 	}
 	resp, err := http.Get(largeImage)
 	if resp.StatusCode != 200 || err != nil {
-		log.Printf("Large image not found, using text icon: %v", err)
 		largeImage = "https://raw.githubusercontent.com/zerootoad/discord-rich-presence-lsp/refs/heads/main/assets/icons/text.png"
-	} else {
-		log.Printf("Large image found: %v", largeImage)
 	}
 	defer resp.Body.Close()
 
@@ -122,8 +110,5 @@ func ClearDiscordActivity(state, details, editor, gitRemoteURL, gitBranchName st
 		activity.Details += " (" + gitBranchName + ")"
 	}
 
-	err = client.SetActivity(activity)
-	if err != nil {
-		log.Printf("Failed to update Rich Presence: %v", err)
-	}
+	return client.SetActivity(activity)
 }
