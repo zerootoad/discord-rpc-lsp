@@ -242,6 +242,7 @@ This project is licensed under the GNU 3.0 License. See the [LICENSE](LICENSE) f
 
 - [zed-discord-presence](https://github.com/xHyroM/zed-discord-presence) for bare understanding and implementation.
 - [rich-go](https://github.com/hugolgst/rich-go) for Discord Rich Presence.
+- [glsp](https://github.com/tliron/glsp) lsp stuff
 - [LSP Specification](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/) for the LSP implementation.
 
 ---
