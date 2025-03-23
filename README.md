@@ -42,7 +42,7 @@ A Language Server Protocol (LSP) to share what you're coding on Discord. This LS
    git clone https://github.com/zerootoad/discord-rpc-lsp.git
    cd discord-rpc-lsp
    ```
-2. **Initialize GO module**
+2. **Initialize Go module**
 
    ```bash
    go mod init github.com/zerootoad/discord-rpc-lsp
