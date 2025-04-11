@@ -19,9 +19,7 @@ A Language Server Protocol (LSP) to share what you're coding on Discord. This LS
 
 ## TODO
 
-- [x] LSP rewrite using glsp instead of go-lsp.
-- [x] Add easy configuration. (pretty straight forward)
-- [ ] Fix discord rich presence buttons not showing. (might be on discord side)
+- [ ] Improve customization. (being worked on)
 - [ ] Add diagnostics to the discord activity, best guess (zk way): [refreshDiagnosticsOfDocument](https://github.com/zk-org/zk/blob/68e6b70eaefdf8344065fcec39d5419dc80d6a02/internal/adapter/lsp/server.go#L556)
 
 ---
@@ -143,15 +141,15 @@ Configuration is done by editing the `config.toml` file located in the configura
 By default, if the config.toml file does not exist, it will be created with the following default values:
 ```toml
 [discord]
-# application_id is the Discord Application ID for Rich Presence.
+# Custom Discord Application ID for the Rich Presence.
 # This is optional, as the lsp handles it based on the editor being used.
 application_id = ''
 
-# small_usage determines what is displayed in the small icon tooltip.
+# Determines what is displayed in the small icon.
 # Valid values: "language" or "editor".
 small_usage = 'language'
 
-# large_usage determines what is displayed in the large icon tooltip.
+# Determines what is displayed in the large icon.
 # Valid values: "language" or "editor".
 large_usage = 'editor'
 
@@ -163,41 +161,49 @@ retry_after = '1m'
 # The discord activity is customizable via placeholders.
 # 
 # List of avaible placeholder:
-# {action} : holds the action being executed (e.g., "Idling", "Editing")
+# {action} : holds the action being executed, can be customized below.
 # {filename} : holds the name of current file.
 # {workspace} : holds the workspace name.
 # {editor} : holds the editor name (e.g., "helix", "neovim")
 # {language} : holds the language name of the current file.
 
+# These 3 fields define the {action} placeholder based on the current action.
+idle_action = 'Idle in {workspace}'
+view_action = 'Viewing {filename}'
+edit_action = 'Editing {filename}'
+
 # state is the first line of the activity status.
 state = '{action} {filename}'
 
-# details is the second line of the activity status.
+# Details hold the current workspace, if no workspace was found u it will use the fallback_details.
 details = 'In {workspace}'
+fallback_details = 'In {editor}'
 
-# large_image is the URL for the large icon.
-large_image = 'https://raw.githubusercontent.com/zerootoad/discord-rich-presence-lsp/main/assets/icons/{editor}.png'
+# OPTIONAL: field only fill it if u would like to overwrite the default picked one. (MUST BE A URL TAKING TO THE IMAGE)
+large_image = ''
 
-# large_text is the tooltip text for the large icon.
+# Large icon text for when u hover over it.
 large_text = '{editor}'
 
-# small_image is the URL for the small icon.
-small_image = 'https://raw.githubusercontent.com/zerootoad/discord-rich-presence-lsp/main/assets/icons/{language}.png'
+# OPTIONAL: field only fill it if u would like to overwrite the default picked one. (MUST BE A URL TAKING TO THE IMAGE)
+small_image = ''
 
-# small_text is the tooltip text for the small icon.
+# Small icon text for when u hover over it.
 small_text = 'Coding in {language}'
 
-# timestamp determines whether to display a timestamp in the activity.
 # If true, the time since the activity started will be shown.
 timestamp = true
 
+# If true, additional information on the file being edited will be shown
+editing_info = true
+
 [lsp]
-# timeout is the duration after which the LSP will enable idling if no activity is detected.
+# The duration after which the LSP will enable idling if no activity is detected.
 # Must be a valid duration string (e.g., "5m", "30s").
 timeout = '5m'
 
 [language_maps]
-# url is the URL to a JSON file containing mappings of file extensions to programming languages.
+# The URL to a JSON file containing mappings of file extensions to programming languages.
 url = 'https://raw.githubusercontent.com/zerootoad/discord-rich-presence-lsp/main/assets/languages.json'
 
 [logging]
@@ -209,6 +215,7 @@ level = 'info'
 # output is the output destination for logs.
 # Valid values: "file" (logs to a file) or "stdout" (logs to the console).
 output = 'file'
+
 ```
 
 ---
