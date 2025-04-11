@@ -132,6 +132,7 @@ For other editors, refer to their documentation on how to configure LSP servers.
 ---
 
 ## Configuration
+
 Configuration is done by editing the `config.toml` file located in the configuration directory. The configuration directory is automatically created in the following locations based on your operating system:
 - **Unix-based systems (Linux, macOS):** `~/.discord-rpc-lsp/`
 - **Windows:** `%APPDATA%\Roaming\.discord-rpc-lsp\`
@@ -197,6 +198,10 @@ timestamp = true
 # If true, additional information on the file being edited will be shown
 editing_info = true
 
+[git]
+# If true, will show the repository and branch information
+git_info = true
+
 [lsp]
 # The duration after which the LSP will enable idling if no activity is detected.
 # Must be a valid duration string (e.g., "5m", "30s").
@@ -217,6 +222,13 @@ level = 'info'
 output = 'file'
 
 ```
+
+---
+
+## Known Issues
+
+Before opening an issue make sure to check for these known problems:
+1. **cant see "show repository button":** refer to this issue (issue 3)[https://github.com/zerootoad/discord-rpc-lsp/issues/3]
 
 ---
 
