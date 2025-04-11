@@ -228,7 +228,7 @@ output = 'file'
 ## Known Issues
 
 Before opening an issue make sure to check for these known problems:
-1. **cant see "show repository button":** refer to this issue (issue 3)[https://github.com/zerootoad/discord-rpc-lsp/issues/3]
+1. **cant see "show repository button":** refer to this existing issue https://github.com/zerootoad/discord-rpc-lsp/issues/3
 
 ---
 
