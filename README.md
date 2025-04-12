@@ -174,7 +174,7 @@ view_action = 'Viewing {filename}'
 edit_action = 'Editing {filename}'
 
 # state is the first line of the activity status.
-state = '{action} {filename}'
+state = '{action}'
 
 # Details hold the current workspace, if no workspace was found u it will use the fallback_details.
 details = 'In {workspace}'
