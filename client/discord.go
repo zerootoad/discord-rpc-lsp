@@ -29,8 +29,8 @@ func replacePlaceholders(s string, placeholders map[string]string) string {
 	return s
 }
 
-func updateActivityConfig(config *utils.Config, placeholders map[string]string) utils.ActivityConfig {
-	newActivity := utils.ActivityConfig{
+func updateActivityConfig(config *Config, placeholders map[string]string) ActivityConfig {
+	newActivity := ActivityConfig{
 		State:      replacePlaceholders(config.Discord.Activity.State, placeholders),
 		Details:    replacePlaceholders(config.Discord.Activity.Details, placeholders),
 		LargeImage: replacePlaceholders(config.Discord.Activity.LargeImage, placeholders),
@@ -43,6 +43,15 @@ func updateActivityConfig(config *utils.Config, placeholders map[string]string) 
 }
 
 func getImageURL(url string, defaultURL string) string {
+	if url == "" {
+		resp, err := http.Get(defaultURL)
+		if err != nil || resp.StatusCode != http.StatusOK {
+			return "https://raw.githubusercontent.com/zerootoad/discord-rpc-lsp/refs/heads/main/assets/icons/text.png"
+		}
+		defer resp.Body.Close()
+		return defaultURL
+	}
+
 	resp, err := http.Get(url)
 	if err != nil || resp.StatusCode != http.StatusOK {
 		return defaultURL
@@ -51,21 +60,23 @@ func getImageURL(url string, defaultURL string) string {
 	return url
 }
 
-func UpdateDiscordActivity(config *utils.Config, action, filename, workspace, currentLang, editor, gitRemoteURL, gitBranchName string, timestamp *time.Time) error {
+func UpdateDiscordActivity(config *Config, tempaction, filename, workspace, currentLang, editor, gitRemoteURL, gitBranchName string, timestamp *time.Time) error {
 	placeholders := map[string]string{
-		"{action}":    action,
 		"{filename}":  filename,
 		"{workspace}": workspace,
 		"{editor}":    editor,
 		"{language}":  currentLang,
 	}
 
+	action := replacePlaceholders(tempaction, placeholders)
+	placeholders["{action}"] = action
+
 	tempActivity := updateActivityConfig(config, placeholders)
 
-	smallImage := getImageURL(tempActivity.SmallImage, "https://raw.githubusercontent.com/zerootoad/discord-rich-presence-lsp/refs/heads/main/assets/icons/text.png")
-	largeImage := getImageURL(tempActivity.LargeImage, "https://raw.githubusercontent.com/zerootoad/discord-rich-presence-lsp/refs/heads/main/assets/icons/text.png")
-	if editor == "neovim" {
-		largeImage = "https://raw.githubusercontent.com/zerootoad/discord-rich-presence-lsp/refs/heads/main/assets/icons/Nvemo.png"
+	smallImage := getImageURL(tempActivity.SmallImage, replacePlaceholders("https://raw.githubusercontent.com/zerootoad/discord-rpc-lsp/refs/heads/main/assets/icons/{language}.png", placeholders))
+	largeImage := getImageURL(tempActivity.LargeImage, replacePlaceholders("https://raw.githubusercontent.com/zerootoad/discord-rpc-lsp/refs/heads/main/assets/icons/{editor}.png", placeholders))
+	if editor == "neovim" && strings.Contains(largeImage, "zerootoad") {
+		largeImage = "https://raw.githubusercontent.com/zerootoad/discord-rpc-lsp/refs/heads/main/assets/icons/Nvemo.png"
 	}
 
 	if currentLang == "" {
@@ -106,7 +117,7 @@ func UpdateDiscordActivity(config *utils.Config, action, filename, workspace, cu
 		}
 	}
 
-	if gitRemoteURL != "" {
+	if gitRemoteURL != "" && config.Git.GitInfo {
 		activity.Buttons = []*client.Button{
 			{
 				Label: "View Repository",
@@ -129,7 +140,7 @@ func UpdateDiscordActivity(config *utils.Config, action, filename, workspace, cu
 	return err
 }
 
-func ClearDiscordActivity(config *utils.Config, action, filename, workspace, editor, gitRemoteURL, gitBranchName string) error {
+func ClearDiscordActivity(config *Config, action, filename, workspace, editor, gitRemoteURL, gitBranchName string) error {
 	placeholders := map[string]string{
 		"{action}":    action,
 		"{filename}":  filename,
@@ -139,9 +150,9 @@ func ClearDiscordActivity(config *utils.Config, action, filename, workspace, edi
 
 	tempActivity := updateActivityConfig(config, placeholders)
 
-	largeImage := getImageURL(tempActivity.LargeImage, "https://raw.githubusercontent.com/zerootoad/discord-rich-presence-lsp/refs/heads/main/assets/icons/text.png")
-	if editor == "neovim" {
-		largeImage = "https://raw.githubusercontent.com/zerootoad/discord-rich-presence-lsp/refs/heads/main/assets/icons/Nvemo.png"
+	largeImage := getImageURL(tempActivity.LargeImage, replacePlaceholders("https://raw.githubusercontent.com/zerootoad/discord-rpc-lsp/refs/heads/main/assets/icons/{editor}.png", placeholders))
+	if editor == "neovim" && strings.Contains(largeImage, "zerootoad") {
+		largeImage = "https://raw.githubusercontent.com/zerootoad/discord-rpc-lsp/refs/heads/main/assets/icons/Nvemo.png"
 	}
 
 	now := time.Now()
@@ -155,7 +166,7 @@ func ClearDiscordActivity(config *utils.Config, action, filename, workspace, edi
 		},
 	}
 
-	if gitRemoteURL != "" {
+	if gitRemoteURL != "" && config.Git.GitInfo {
 		activity.Buttons = []*client.Button{
 			{
 				Label: "View Repository",

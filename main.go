@@ -1,10 +1,12 @@
 package main
 
 import (
-	log "github.com/sirupsen/logrus"
 	"os"
 	"path/filepath"
 
+	log "github.com/sirupsen/logrus"
+
+	"github.com/zerootoad/discord-rpc-lsp/client"
 	"github.com/zerootoad/discord-rpc-lsp/handler"
 	"github.com/zerootoad/discord-rpc-lsp/utils"
 )
@@ -32,7 +34,7 @@ func main() {
 	defer logFile.Close()
 
 	configFilePath := filepath.Join(configDir, "config.toml")
-	config, err := utils.LoadConfig(configFilePath)
+	config, err := client.LoadConfig(configFilePath)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"configFilePath": configFilePath,

@@ -25,15 +25,16 @@ type LSPHandler struct {
 	Shutdown    bool
 	CurrentLang string
 	IdleTimer   *time.Timer
+	ViewTimer   *time.Timer
 	Timeout     time.Duration
 	Client      *client.Client
 	LangMaps    *client.LangMaps
 	ElapsedTime *time.Time
-	Config      *utils.Config
+	Config      *client.Config
 	Mutex       sync.Mutex
 }
 
-func NewLSPHandler(name string, version string, config *utils.Config) (*LSPHandler, error) {
+func NewLSPHandler(name string, version string, config *client.Config) (*LSPHandler, error) {
 	log.WithFields(log.Fields{
 		"name":    name,
 		"version": version,
@@ -72,13 +73,28 @@ func (h *LSPHandler) ResetIdleTimer() {
 	}
 
 	h.IdleTimer = time.AfterFunc(h.Timeout, func() {
-		err := client.ClearDiscordActivity(h.Config, "Idling", "", h.Client.WorkspaceName, h.Client.Editor, h.Client.GitRemoteURL, h.Client.GitBranchName)
+		err := client.ClearDiscordActivity(h.Config, h.Config.Discord.Activity.IdleAction, "", h.Client.WorkspaceName, h.Client.Editor, h.Client.GitRemoteURL, h.Client.GitBranchName)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"error": err,
 			}).Error("Failed to update Discord activity")
 		}
 		h.ElapsedTime = nil
+	})
+}
+
+func (h *LSPHandler) ResetViewTimer() {
+	if h.ViewTimer != nil {
+		h.ViewTimer.Stop()
+	}
+
+	h.ViewTimer = time.AfterFunc(1*time.Minute, func() {
+		err := client.UpdateDiscordActivity(h.Config, h.Config.Discord.Activity.ViewAction, h.CurrentLang, h.Client.WorkspaceName, h.CurrentLang, h.Client.Editor, h.Client.GitRemoteURL, h.Client.GitBranchName, h.ElapsedTime)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error": err,
+			}).Error("Failed to update Discord activity")
+		}
 	})
 }
 
@@ -226,7 +242,7 @@ func (h *LSPHandler) didOpen(ctx *glsp.Context, params *protocol.DidOpenTextDocu
 	h.ResetIdleTimer()
 
 	go func() {
-		err := client.UpdateDiscordActivity(h.Config, "Viewing", fileName, h.Client.WorkspaceName, h.CurrentLang, h.Client.Editor, h.Client.GitRemoteURL, h.Client.GitBranchName, h.ElapsedTime)
+		err := client.UpdateDiscordActivity(h.Config, h.Config.Discord.Activity.ViewAction, fileName, h.Client.WorkspaceName, h.CurrentLang, h.Client.Editor, h.Client.GitRemoteURL, h.Client.GitBranchName, h.ElapsedTime)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"error": err,
@@ -282,6 +298,7 @@ func (h *LSPHandler) didChange(ctx *glsp.Context, params *protocol.DidChangeText
 	}).Info("Changed file")
 
 	h.ResetIdleTimer()
+	h.ResetViewTimer()
 
 	go func() {
 		if len(params.ContentChanges) > 0 {
@@ -290,13 +307,13 @@ func (h *LSPHandler) didChange(ctx *glsp.Context, params *protocol.DidChangeText
 			switch change := change.(type) {
 			case protocol.TextDocumentContentChangeEvent:
 				var activity string
-				if change.Range != nil {
+				if change.Range != nil && h.Config.Discord.Activity.EditingInfo {
 					line := change.Range.Start.Line
-					activity = "In line " + strconv.Itoa(int(line))
+					activity = h.Config.Discord.Activity.EditAction + " - In line " + strconv.Itoa(int(line))
 				} else {
-					activity = "Editing " + fileName
+					activity = h.Config.Discord.Activity.EditAction
 				}
-				err := client.UpdateDiscordActivity(h.Config, activity, "", h.Client.WorkspaceName, h.CurrentLang, h.Client.Editor, h.Client.GitRemoteURL, h.Client.GitBranchName, h.ElapsedTime)
+				err := client.UpdateDiscordActivity(h.Config, activity, fileName, h.Client.WorkspaceName, h.CurrentLang, h.Client.Editor, h.Client.GitRemoteURL, h.Client.GitBranchName, h.ElapsedTime)
 				if err != nil {
 					log.WithFields(log.Fields{
 						"error": err,
@@ -304,7 +321,7 @@ func (h *LSPHandler) didChange(ctx *glsp.Context, params *protocol.DidChangeText
 				}
 
 			case protocol.TextDocumentContentChangeEventWhole:
-				err := client.UpdateDiscordActivity(h.Config, "Editing", fileName, h.Client.WorkspaceName, h.CurrentLang, h.Client.Editor, h.Client.GitRemoteURL, h.Client.GitBranchName, h.ElapsedTime)
+				err := client.UpdateDiscordActivity(h.Config, h.Config.Discord.Activity.EditAction, fileName, h.Client.WorkspaceName, h.CurrentLang, h.Client.Editor, h.Client.GitRemoteURL, h.Client.GitBranchName, h.ElapsedTime)
 				if err != nil {
 					log.WithFields(log.Fields{
 						"error": err,
@@ -312,7 +329,7 @@ func (h *LSPHandler) didChange(ctx *glsp.Context, params *protocol.DidChangeText
 				}
 
 			default:
-				err := client.UpdateDiscordActivity(h.Config, "Editing", fileName, h.Client.WorkspaceName, h.CurrentLang, h.Client.Editor, h.Client.GitRemoteURL, h.Client.GitBranchName, h.ElapsedTime)
+				err := client.UpdateDiscordActivity(h.Config, h.Config.Discord.Activity.EditAction, fileName, h.Client.WorkspaceName, h.CurrentLang, h.Client.Editor, h.Client.GitRemoteURL, h.Client.GitBranchName, h.ElapsedTime)
 				log.WithFields(log.Fields{
 					"changeType": fmt.Sprintf("%T", change),
 				}).Warn("Unknown content change type")
@@ -323,7 +340,7 @@ func (h *LSPHandler) didChange(ctx *glsp.Context, params *protocol.DidChangeText
 				}
 			}
 		} else {
-			err := client.UpdateDiscordActivity(h.Config, "Editing", fileName, h.Client.WorkspaceName, h.CurrentLang, h.Client.Editor, h.Client.GitRemoteURL, h.Client.GitBranchName, h.ElapsedTime)
+			err := client.UpdateDiscordActivity(h.Config, h.Config.Discord.Activity.EditAction, fileName, h.Client.WorkspaceName, h.CurrentLang, h.Client.Editor, h.Client.GitRemoteURL, h.Client.GitBranchName, h.ElapsedTime)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"error": err,
