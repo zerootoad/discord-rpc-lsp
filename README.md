@@ -19,7 +19,8 @@ A Language Server Protocol (LSP) to share what you're coding on Discord. This LS
 
 ## TODO
 
-- [ ] Improve customization. (being worked on)
+- [ ] Improve customization. (wip, added ability to change the action placeholder and better image handling)
+- [x] Fix change state not becoming viewing state after exiting insert mode. (added a view timer, after 1 minute of detecting no changes it will switch to viewing)
 - [ ] Add diagnostics to the discord activity, best guess (zk way): [refreshDiagnosticsOfDocument](https://github.com/zk-org/zk/blob/68e6b70eaefdf8344065fcec39d5419dc80d6a02/internal/adapter/lsp/server.go#L556)
 
 ---
