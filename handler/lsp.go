@@ -120,6 +120,10 @@ func (h *LSPHandler) initialize(ctx *glsp.Context, params *protocol.InitializePa
 		"params": params,
 	}).Info("Initializing server")
 
+	if params == nil {
+		return nil, fmt.Errorf("initialize params cannot be nil")
+	}
+
 	capabilities := h.Handler.CreateServerCapabilities()
 
 	h.Client.Editor = strings.ToLower(params.ClientInfo.Name)
@@ -157,7 +161,23 @@ func (h *LSPHandler) initialize(ctx *glsp.Context, params *protocol.InitializePa
 		time.Sleep(retryafter)
 	}
 
-	h.Client.RootURI = string(*params.RootURI)
+	var rootURI string
+	if params.RootURI != nil {
+		rootURI = string(*params.RootURI)
+	} else {
+		rootPath, err := os.Getwd()
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error": err,
+			}).Error("Failed to get root path, setting to temp")
+
+			rootURI = "file://" + os.TempDir()
+		} else {
+			rootURI = "file://" + rootPath
+		}
+	}
+	h.Client.RootURI = rootURI
+
 	log.WithFields(log.Fields{
 		"rootURI": h.Client.RootURI,
 	}).Info("Root URI set")

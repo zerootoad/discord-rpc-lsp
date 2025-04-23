@@ -2,6 +2,7 @@ package client
 
 import (
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -61,6 +62,10 @@ func getImageURL(url string, defaultURL string) string {
 }
 
 func UpdateDiscordActivity(config *Config, tempaction, filename, workspace, currentLang, editor, gitRemoteURL, gitBranchName string, timestamp *time.Time) error {
+	if strings.Contains(workspace, os.TempDir()) {
+		workspace = editor
+	}
+
 	placeholders := map[string]string{
 		"{filename}":  filename,
 		"{workspace}": workspace,
