@@ -230,6 +230,7 @@ output = 'file'
 
 Before opening an issue make sure to check for these known problems:
 1. **cant see "show repository button":** refer to this existing issue https://github.com/zerootoad/discord-rpc-lsp/issues/3
+2. **language server exiting/not working:** this is prolly means there's an error at runtime, so check ur editor logs, locate the logs from the lsp and send them with the issue.
 
 ---
 
