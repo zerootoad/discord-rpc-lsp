@@ -64,7 +64,7 @@ func NewLSPHandler(name string, version string, config *client.Config) (*LSPHand
 	}, nil
 }
 
-func (h *LSPHandler) ResetIdleTimer(filename string) {
+func (h *LSPHandler) ResetIdleTimer() {
 	if h.IdleTimer != nil {
 		h.IdleTimer.Stop()
 	}
