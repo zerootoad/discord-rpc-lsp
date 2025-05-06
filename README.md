@@ -19,9 +19,9 @@ A Language Server Protocol (LSP) to share what you're coding on Discord. This LS
 
 ## TODO
 
-- [ ] Fix idle state not resetting timer and showing past edited file for some reason.
+- [x] Fix idle state not resetting timer and showing past edited file for some reason. (possibly fixed, please report this issue if u encounter it)
 ![image](https://github.com/user-attachments/assets/dbf7da91-8063-4d6c-9e74-31f9d50ed082)
-
+- [ ] Improve the project code overall. (really horrid atm)
 - [ ] Improve customization. (wip, added ability to change the action placeholder and better image handling)
 - [ ] Add diagnostics to the discord activity, best guess (zk way): [refreshDiagnosticsOfDocument](https://github.com/zk-org/zk/blob/68e6b70eaefdf8344065fcec39d5419dc80d6a02/internal/adapter/lsp/server.go#L556)
 
