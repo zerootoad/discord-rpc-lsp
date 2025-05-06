@@ -32,6 +32,8 @@ type LSPHandler struct {
 	ElapsedTime *time.Time
 	Config      *client.Config
 	Mutex       sync.Mutex
+	IsIdle      bool
+	IsView      bool
 }
 
 func NewLSPHandler(name string, version string, config *client.Config) (*LSPHandler, error) {
@@ -62,7 +64,7 @@ func NewLSPHandler(name string, version string, config *client.Config) (*LSPHand
 	}, nil
 }
 
-func (h *LSPHandler) ResetIdleTimer() {
+func (h *LSPHandler) ResetIdleTimer(filename string) {
 	if h.IdleTimer != nil {
 		h.IdleTimer.Stop()
 	}
@@ -70,9 +72,13 @@ func (h *LSPHandler) ResetIdleTimer() {
 	if h.ElapsedTime == nil {
 		now := time.Now()
 		h.ElapsedTime = &now
+		h.IsIdle = false
 	}
 
 	h.IdleTimer = time.AfterFunc(h.Timeout, func() {
+		h.IsIdle = true
+		h.ElapsedTime = nil
+
 		err := client.ClearDiscordActivity(h.Config, h.Config.Discord.Activity.IdleAction, "", h.Client.WorkspaceName, h.Client.Editor, h.Client.GitRemoteURL, h.Client.GitBranchName)
 		if err != nil {
 			log.WithFields(log.Fields{
@@ -83,13 +89,16 @@ func (h *LSPHandler) ResetIdleTimer() {
 	})
 }
 
-func (h *LSPHandler) ResetViewTimer() {
+func (h *LSPHandler) ResetViewTimer(filename string) {
 	if h.ViewTimer != nil {
 		h.ViewTimer.Stop()
 	}
 
+	h.IsView = false
+
 	h.ViewTimer = time.AfterFunc(1*time.Minute, func() {
-		err := client.UpdateDiscordActivity(h.Config, h.Config.Discord.Activity.ViewAction, h.CurrentLang, h.Client.WorkspaceName, h.CurrentLang, h.Client.Editor, h.Client.GitRemoteURL, h.Client.GitBranchName, h.ElapsedTime)
+		h.IsView = true
+		err := client.UpdateDiscordActivity(h.Config, h.Config.Discord.Activity.ViewAction, filename, h.Client.WorkspaceName, h.CurrentLang, h.Client.Editor, h.Client.GitRemoteURL, h.Client.GitBranchName, h.ElapsedTime)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"error": err,
@@ -318,7 +327,7 @@ func (h *LSPHandler) didChange(ctx *glsp.Context, params *protocol.DidChangeText
 	}).Info("Changed file")
 
 	h.ResetIdleTimer()
-	h.ResetViewTimer()
+	h.ResetViewTimer(fileName)
 
 	go func() {
 		if len(params.ContentChanges) > 0 {
