@@ -191,21 +191,25 @@ func (h *LSPHandler) initialize(ctx *glsp.Context, params *protocol.InitializePa
 		"rootURI": h.Client.RootURI,
 	}).Info("Root URI set")
 
-	h.Client.WorkspaceName = utils.GetFileName(h.Client.RootURI)
+	if !strings.Contains(rootURI, os.TempDir()) {
+		h.Client.WorkspaceName = utils.GetFileName(h.Client.RootURI)
 
-	workspacePath := filepath.Dir(h.Client.RootURI) + "/" + utils.GetFileName(h.Client.RootURI)
-	log.WithFields(log.Fields{
-		"workspacePath": workspacePath,
-	}).Info("Workspace path set")
-
-	remoteUrl, branchName, err := client.GetGitRepositoryInfo(workspacePath)
-	if err != nil {
+		workspacePath := filepath.Dir(h.Client.RootURI) + "/" + utils.GetFileName(h.Client.RootURI)
 		log.WithFields(log.Fields{
-			"error": err,
-		}).Error("Failed to get git repository info")
+			"workspacePath": workspacePath,
+		}).Info("Workspace path set")
+
+		remoteUrl, branchName, err := client.GetGitRepositoryInfo(workspacePath)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error": err,
+			}).Error("Failed to get git repository info")
+		} else {
+			h.Client.GitRemoteURL = remoteUrl
+			h.Client.GitBranchName = branchName
+		}
 	} else {
-		h.Client.GitRemoteURL = remoteUrl
-		h.Client.GitBranchName = branchName
+		h.Client.WorkspaceName = h.Client.Editor
 	}
 
 	return protocol.InitializeResult{

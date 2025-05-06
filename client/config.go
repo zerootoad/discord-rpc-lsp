@@ -10,18 +10,17 @@ import (
 )
 
 type ActivityConfig struct {
-	IdleAction      string `toml:"idle_action"`
-	ViewAction      string `toml:"view_action"`
-	EditAction      string `toml:"edit_action"`
-	State           string `toml:"state"`
-	Details         string `toml:"details"`
-	FallbackDetails string `toml:"fallback_details"`
-	LargeImage      string `toml:"large_image"`
-	LargeText       string `toml:"large_text"`
-	SmallImage      string `toml:"small_image"`
-	SmallText       string `toml:"small_text"`
-	Timestamp       bool   `toml:"timestamp"`
-	EditingInfo     bool   `toml:"editing_info"`
+	IdleAction  string `toml:"idle_action"`
+	ViewAction  string `toml:"view_action"`
+	EditAction  string `toml:"edit_action"`
+	State       string `toml:"state"`
+	Details     string `toml:"details"`
+	LargeImage  string `toml:"large_image"`
+	LargeText   string `toml:"large_text"`
+	SmallImage  string `toml:"small_image"`
+	SmallText   string `toml:"small_text"`
+	Timestamp   bool   `toml:"timestamp"`
+	EditingInfo bool   `toml:"editing_info"`
 }
 
 type Config struct {
@@ -65,12 +64,12 @@ func defaultConfig() *Config {
 			LargeUse:      "editor",
 			RetryAfter:    "1m",
 			Activity: ActivityConfig{
-				IdleAction: "Idle in {workspace}",
+				IdleAction: "Idle in {editor}",
 				ViewAction: "Viewing {filename}",
 				EditAction: "Editing {filename}",
 
 				State:       "{action} {filename}",
-				Details:     "in {workspace}",
+				Details:     "In {workspace}",
 				LargeImage:  "",
 				LargeText:   "{editor}",
 				SmallImage:  "",
