@@ -1,6 +1,6 @@
 # Discord Rich Presence LSP
 
-A Language Server Protocol (LSP) to share what you're coding on Discord. This LSP integrates with your editor to display your current coding activity (file, language, and more) as a rich presence on Discord. 
+A Language Server Protocol (LSP) to share what you're coding on Discord. This LSP integrates with your editor to display your current coding activity (file, language, Git info, etc.) as a rich presence on Discord.
 
 ![image](https://github.com/user-attachments/assets/3089b1ab-0f04-46d3-ae59-ed6207a853f4)
 ![image](https://github.com/user-attachments/assets/ddbd5f14-65f2-4ab0-a0c5-0b5eb3b36795)
@@ -9,72 +9,101 @@ A Language Server Protocol (LSP) to share what you're coding on Discord. This LS
 
 ## Features
 
-- Displays the file you're currently editing.
-- Shows the programming language you're using.
-- Includes Git repository information (branch and remote URL).
-- Customizable rich presence with editor-specific icons.
-- Supports multiple editors via LSP.
+* Displays the file you're currently editing.
+* Shows the programming language you're using.
+* Includes Git repository information (branch and remote URL).
+* Customizable rich presence with editor-specific icons.
+* Supports multiple editors via LSP.
 
 ---
 
 ## TODO
 
-- [X] Implement zerolog for logging.
-- [ ] [create tagged releases in github](https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository) eg. v1.0.0
-- [ ] Improve the project code overall. (working on it as each commit is posted)
-- [ ] Improve customization. (being worked on currently too)
+* [x] Implement zerolog for logging.
+* [x] Create tagged releases on GitHub (e.g., v1.0.0).
+* [ ] Improve project code.
+* [ ] Improve customization options.
 
 ---
+
 ## Installation
-
-### Arch Linux (AUR)
-
-Install the [`discord-rpc-lsp-git`](https://aur.archlinux.org/packages/discord-rpc-lsp-git) from the [AUR](https://aur.archlinux.org/).
-
-```
-yay -S discord-rpc-lsp-git
-```
-
-
-## Build Steps
 
 ### Prerequisites
 
-- Go (version 1.21 or higher)
-- Git
-- Discord (with Rich Presence enabled)
+* Go 1.21+
+* Git
+* Discord (with Rich Presence enabled)
 
-### Steps
+---
 
-1. **Clone the Repository**
+### Linux
 
-   ```bash
-   git clone https://github.com/zerootoad/discord-rpc-lsp.git
-   cd discord-rpc-lsp
-   ```
-2. **Initialize Go module**
+**AUR (Arch/Manjaro)**
 
-   ```bash
-   go mod init github.com/zerootoad/discord-rpc-lsp
-   ```
-   
-2. **Download Dependencies**
+```bash
+yay -S discord-rpc-lsp-git
+```
 
-   ```bash
-   go mod tidy
-   ```
+**Manual via Go**
 
-3. **Build the Project**
+```bash
+go install github.com/zerootoad/discord-rpc-lsp@latest
+```
 
-   ```bash
-   go build
-   ```
+Binary installs to `$(go env GOPATH)/bin` (usually `~/go/bin`). Add to PATH:
 
-4. **Run the LSP Server**
+```bash
+export PATH=$PATH:$(go env GOPATH)/bin
+```
 
-   ```bash
-   ./discord-rpc-lsp
-   ```
+---
+
+### macOS
+
+**Manual via Go**
+
+```bash
+go install github.com/zerootoad/discord-rpc-lsp@latest
+```
+
+Binary installs to `$(go env GOPATH)/bin` (usually `~/go/bin`). Add to PATH:
+
+```bash
+export PATH=$PATH:$(go env GOPATH)/bin
+```
+
+---
+
+### Windows
+
+**Manual via Go**
+
+```powershell
+go install github.com/zerootoad/discord-rpc-lsp@latest
+```
+
+Binary installs to `%USERPROFILE%\go\bin`. Add this to your **Environment Variables → PATH**.
+
+---
+
+### Build from Source (Optional)
+
+```bash
+git clone https://github.com/zerootoad/discord-rpc-lsp.git
+cd discord-rpc-lsp
+go mod tidy
+go build
+```
+
+Run the server:
+
+```bash
+# Linux/macOS
+./discord-rpc-lsp
+
+# Windows
+discord-rpc-lsp.exe
+```
 
 ---
 
@@ -82,76 +111,100 @@ yay -S discord-rpc-lsp-git
 
 ### Supported Editors
 
-This LSP works with any editor that supports the Language Server Protocol (LSP). Below are instructions for a few popular editors.
+This LSP works with any editor that supports the Language Server Protocol (LSP).
 
 ---
 
-### **Visual Studio Code (VS Code) WIP**
+### Neovim
+
+1. Install `nvim-lspconfig`.
+2. Add to your `init.lua`:
+
+```lua
+local lspconfig = require('lspconfig')
+local configs = require('lspconfig.configs')
+
+configs.discord_rpc = {
+    default_config = {
+        cmd = { "discord-rpc-lsp" },  -- full path if not in PATH
+        filetypes = {"*"},             -- adjust to your languages
+        root_dir = function(fname)
+            return lspconfig.util.root_pattern('.git')(fname) or vim.fn.getcwd()
+        end,
+        settings = {},
+    },
+}
+```
 
 ---
 
-### **Neovim**
+### Helix
 
-1. Install a plugin like [nvim-lspconfig](https://github.com/neovim/nvim-lspconfig) if you don't already have it.
-2. Add the following configuration to your `init.lua`:
+`~/.config/helix/languages.toml`:
 
-   ```lua
-   local lspconfig = require('lspconfig')
-   local configs = require('lspconfig.configs')
+```toml
+[language-server.discord-rpc]
+command = "discord-rpc-lsp"  # full path if needed
 
+[[language]]
+name = "go"
+language-servers = ["discord-rpc"]
 
-    configs.discord_rpc = {
-        default_config = {
-            cmd = { "path/to/discord-rpc-lsp" },
-            filetypes = {"*"}, -- Add relevant filetypes if needed
-            root_dir = function(fname)
-                return lspconfig.util.root_pattern('.git')(fname) or vim.fn.getcwd()
-            end,
-            settings = {},
-        },
+[[language]]
+name = "python"
+language-servers = ["discord-rpc"]
+```
+
+Add additional languages as needed.
+
+---
+
+### Visual Studio Code
+
+`settings.json`:
+
+```json
+{
+  "languageserver": {
+    "discord-rpc-lsp": {
+      "command": "discord-rpc-lsp",
+      "args": [],
+      "filetypes": ["go","python","javascript","typescript","rust","lua","c","cpp","java","text"],
+      "rootPatterns": [".git","."],
+      "trace.server": "verbose"
     }
-   ```
-
-3. Replace `path/to/discord-rpc-lsp` with the actual path to the built binary.
-
----
-
-### **Helix Editor**
-
-1. Open your `languages.toml` file (usually located at `~/.config/helix/languages.toml` for linux).
-2. Add the following configuration:
-
-   ```toml
-   [language-server.discord-rpc]
-   command = "path/to/discord-rpc-lsp"
-   ```
-
-3. Replace `path/to/discord-rpc-lsp` with the actual path to the built binary.
-4. Add `"discord-rpc"` for the choosen languages:
-   ```toml
-   [[language]]
-   name = "go" # or any language of choice
-   language-servers = [ "discord-rpc" ]
-   ```
-
+  }
+}
+```
 
 ---
 
-### **Other Editors**
+### Zed Editor
 
-For other editors, refer to their documentation on how to configure LSP servers. The process is similar: specify the path to the `discord-rpc-lsp` binary in your editor's LSP configuration.
+Zed automatically detects LSP servers:
+
+1. Ensure `discord-rpc-lsp` is in your PATH.
+2. Open Zed and a project/file → Discord Rich Presence updates automatically.
+
+Optional wrapper script:
+
+```bash
+#!/bin/bash
+export PATH=$PATH:$(go env GOPATH)/bin
+zed "$@"
+```
 
 ---
 
 ## Configuration
 
-Configuration is done by editing the `config.toml` file located in the configuration directory. The configuration directory is automatically created in the following locations based on your operating system:
-- **Unix-based systems (Linux, macOS):** `~/.discord-rpc-lsp/`
-- **Windows:** `%APPDATA%\Roaming\.discord-rpc-lsp\`
+Configuration is done via `config.toml` in the configuration directory:
 
-*Make sure to make reference to the discord rich presence documentation for the fields.* [discord rpc docs](https://discord.com/developers/docs/rich-presence/using-with-the-game-sdk#understanding-rich-presence-data)
+* **Linux/macOS:** `~/.discord-rpc-lsp/`
+* **Windows:** `%APPDATA%\Roaming\.discord-rpc-lsp\`
 
-By default, if the config.toml file does not exist, it will be created with the following default values:
+Default configuration includes:
+
 ```toml
 [discord]
 # Custom Discord Application ID for the Rich Presence.
@@ -239,49 +292,46 @@ level = 'info'
 # output is the output destination for logs.
 # Valid values: "file" (logs to a file) or "stdout" (logs to the console).
 output = 'file'
-
 ```
 
 ---
 
 ## Known Issues
 
-Before opening an issue make sure to check for these known problems:
-1. **cant see "show repository button":** refer to this existing issue https://github.com/zerootoad/discord-rpc-lsp/issues/3
-2. **language server exiting/not working:** this is prolly means there's an error at runtime, so check ur editor logs, locate the logs from the lsp and send them with the issue.
+1. “Show repository” button may not appear: check [issue #3](https://github.com/zerootoad/discord-rpc-lsp/issues/3).
+2. LSP exiting/not working: check editor logs and LSP output logs for runtime errors and open an issue.
 
 ---
 
 ## Assets
 
-If you'd like to add custom assets (e.g., editor icons), follow these steps:
+To add custom assets (icons, etc.):
 
-1. Add your asset (e.g., `my-editor.png`) to the `assets/icons/` directory via a pull request.
-2. Wait for the repository maintaners to merge it.
-   
+1. Add your asset to `assets/icons/`.
+2. Open a pull request.
+3. Wait for merge.
+
 ---
 
 ## Contributing
 
-Contributions are welcome! If you'd like to contribute, please:
-
 1. Fork the repository.
-2. Create a new branch for your feature or bugfix.
+2. Create a branch for your feature or bugfix.
 3. Submit a pull request.
 
 ---
 
 ## License
 
-This project is licensed under the GNU 3.0 License. See the [LICENSE](LICENSE) file for details.
+GNU 3.0 License — see [LICENSE](LICENSE).
 
 ---
 
 ## Resources
 
-- [zed-discord-presence](https://github.com/xHyroM/zed-discord-presence) for bare understanding and implementation.
-- [rich-go](https://github.com/hugolgst/rich-go) for Discord Rich Presence.
-- [glsp](https://github.com/tliron/glsp) lsp stuff.
-- [LSP Specification](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/) for the LSP implementation.
+* [zed-discord-presence](https://github.com/xHyroM/zed-discord-presence)
+* [rich-go](https://github.com/hugolgst/rich-go)
+* [glsp](https://github.com/tliron/glsp)
+* [LSP Specification](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/)
 
 ---
