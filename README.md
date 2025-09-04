@@ -19,11 +19,10 @@ A Language Server Protocol (LSP) to share what you're coding on Discord. This LS
 
 ## TODO
 
-- [ ] Implement zerolog for logging.
+- [X] Implement zerolog for logging.
 - [ ] [create tagged releases in github](https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository) eg. v1.0.0
-- [ ] Improve the project code overall. (really horrid atm)
-- [ ] Improve customization. (wip, added ability to change the action placeholder and better image handling)
-- [ ] Add diagnostics to the discord activity, best guess (zk way): [refreshDiagnosticsOfDocument](https://github.com/zk-org/zk/blob/68e6b70eaefdf8344065fcec39d5419dc80d6a02/internal/adapter/lsp/server.go#L556)
+- [ ] Improve the project code overall. (working on it as each commit is posted)
+- [ ] Improve customization. (being worked on currently too)
 
 ---
 ## Installation
@@ -217,7 +216,15 @@ git_info = true
 [lsp]
 # The duration after which the LSP will enable idling if no activity is detected.
 # Must be a valid duration string (e.g., "5m", "30s").
-timeout = '5m'
+idle_after = '5m'
+# The duration after which the editing mode will go in viewing if no changes are applied.
+# Must be a valid duration string (e.g., "5m", "30s").
+view_after = '30s'
+# This indicates how much u should offset the line for, this is a fix incase ur line index isnt right.
+# Must be a valid expression ("+1", "+ 2", "-3", "- 4").
+# If ur line is off by one, change this to "+0" or "-0".
+line_offset = '+1'
+
 
 [language_maps]
 # The URL to a JSON file containing mappings of file extensions to programming languages.
@@ -274,7 +281,7 @@ This project is licensed under the GNU 3.0 License. See the [LICENSE](LICENSE) f
 
 - [zed-discord-presence](https://github.com/xHyroM/zed-discord-presence) for bare understanding and implementation.
 - [rich-go](https://github.com/hugolgst/rich-go) for Discord Rich Presence.
-- [glsp](https://github.com/tliron/glsp) lsp stuff
+- [glsp](https://github.com/tliron/glsp) lsp stuff.
 - [LSP Specification](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/) for the LSP implementation.
 
 ---
