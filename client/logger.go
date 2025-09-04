@@ -59,7 +59,6 @@ func InitLogger(logfilePath string, level string, output string) {
 		TimeFormat: time.RFC3339,
 	}).With().
 		Timestamp().
-		Caller().
 		Logger()
 }
 
