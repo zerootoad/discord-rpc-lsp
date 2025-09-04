@@ -4,8 +4,6 @@ import (
 	"os"
 	"path/filepath"
 
-	log "github.com/sirupsen/logrus"
-
 	"github.com/zerootoad/discord-rpc-lsp/client"
 	"github.com/zerootoad/discord-rpc-lsp/handler"
 	"github.com/zerootoad/discord-rpc-lsp/utils"
@@ -17,102 +15,55 @@ func main() {
 
 	err := os.MkdirAll(configDir, 0755)
 	if err != nil {
-		log.WithFields(log.Fields{
+		client.Error("Failed to create config directory", map[string]any{
 			"configDir": configDir,
 			"error":     err,
-		}).Fatal("Failed to create config directory")
+		})
 	}
 
 	logFilePath := filepath.Join(configDir, "lsp.log")
 	logFile, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
 	if err != nil {
-		log.WithFields(log.Fields{
+		client.Error("Failed to open log file", map[string]any{
 			"logFilePath": logFilePath,
 			"error":       err,
-		}).Fatal("Failed to open log file")
+		})
 	}
 	defer logFile.Close()
+
+	client.InitLogger(logFilePath, "info", "stdout")
+	client.Debug("Starting app with default logger", nil)
 
 	configFilePath := filepath.Join(configDir, "config.toml")
 	config, err := client.LoadConfig(configFilePath)
 	if err != nil {
-		log.WithFields(log.Fields{
+		client.Error("Failed to load or create configuration", map[string]any{
 			"configFilePath": configFilePath,
 			"error":          err,
-		}).Fatal("Failed to load or create configuration")
+		})
+		config = client.DefaultConfig()
 	}
 
-	switch config.Logging.Level {
-	case "debug":
-		log.SetLevel(log.DebugLevel)
-	case "info":
-		log.SetLevel(log.InfoLevel)
-	case "warn":
-		log.SetLevel(log.WarnLevel)
-	case "error":
-		log.SetLevel(log.ErrorLevel)
-	default:
-		log.SetLevel(log.InfoLevel)
-		log.Warnf("Invalid logging level '%s' in config. Defaulting to 'info'.", config.Logging.Level)
-	}
+	client.InitLogger(logFilePath, config.Logging.Level, config.Logging.Output)
+	client.Debug("Logger re-initialized with user config", map[string]any{
+		"level":  config.Logging.Level,
+		"output": config.Logging.Output,
+	})
 
-	switch config.Logging.Output {
-	case "file":
-		log.SetOutput(logFile)
-	case "stdout":
-		log.SetOutput(os.Stdout)
-	default:
-		log.SetOutput(os.Stdout)
-		log.Warnf("Invalid logging output '%s' in config. Defaulting to 'stdout'.", config.Logging.Output)
-	}
-
-	log.SetFormatter(&log.JSONFormatter{})
-
-	if config.Logging.Output == "file" {
-		log.AddHook(&writerHook{
-			Writer: os.Stdout,
-			LogLevels: []log.Level{
-				log.InfoLevel,
-				log.WarnLevel,
-				log.ErrorLevel,
-				log.FatalLevel,
-				log.PanicLevel,
-			},
+	lspHandler, err := handler.NewLSPHandler("discord-rpc-lsp", "1.0.1", config)
+	if err != nil {
+		client.Error("Failed to create LSP handler", map[string]any{
+			"error": err,
 		})
 	}
 
-	lspHandler, err := handler.NewLSPHandler("discord-rpc-lsp", "0.0.5", config)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error": err,
-		}).Fatal("Failed to create LSP handler")
-	}
-
 	server := lspHandler.NewServer()
-	log.Info("Starting LSP server")
+	client.Debug("Starting LSP server", map[string]any{})
 	err = server.RunStdio()
 	if err != nil {
-		log.WithFields(log.Fields{
+		client.Error("Failed to run stdio server", map[string]any{
 			"error": err,
-		}).Fatal("Failed to run stdio server")
+		})
 	}
 
-}
-
-type writerHook struct {
-	Writer    *os.File
-	LogLevels []log.Level
-}
-
-func (hook *writerHook) Fire(entry *log.Entry) error {
-	line, err := entry.String()
-	if err != nil {
-		return err
-	}
-	_, err = hook.Writer.Write([]byte(line))
-	return err
-}
-
-func (hook *writerHook) Levels() []log.Level {
-	return hook.LogLevels
 }

@@ -6,7 +6,6 @@ import (
 	"reflect"
 
 	"github.com/pelletier/go-toml/v2"
-	log "github.com/sirupsen/logrus"
 )
 
 type ActivityConfig struct {
@@ -37,7 +36,9 @@ type Config struct {
 	} `toml:"git"`
 
 	Lsp struct {
-		Timeout string `toml:"timeout"`
+		IdleAfter  string `toml:"idle_after"`
+		ViewAfter  string `toml:"view_after"`
+		LineOffset string `toml:"line_offset"`
 	} `toml:"lsp"`
 
 	LanguageMaps struct {
@@ -50,7 +51,7 @@ type Config struct {
 	} `toml:"logging"`
 }
 
-func defaultConfig() *Config {
+func DefaultConfig() *Config {
 	return &Config{
 		Discord: struct {
 			ApplicationID string         `toml:"application_id"`
@@ -68,7 +69,7 @@ func defaultConfig() *Config {
 				ViewAction: "Viewing {filename}",
 				EditAction: "Editing {filename}",
 
-				State:       "{action} {filename}",
+				State:       "{action}",
 				Details:     "In {workspace}",
 				LargeImage:  "",
 				LargeText:   "{editor}",
@@ -82,9 +83,13 @@ func defaultConfig() *Config {
 			GitInfo bool `toml:"git_info"`
 		}{GitInfo: true},
 		Lsp: struct {
-			Timeout string `toml:"timeout"`
+			IdleAfter  string `toml:"idle_after"`
+			ViewAfter  string `toml:"view_after"`
+			LineOffset string `toml:"line_offset"`
 		}{
-			Timeout: "5m",
+			IdleAfter:  "5m",
+			ViewAfter:  "30s",
+			LineOffset: "+1",
 		},
 		LanguageMaps: struct {
 			URL string `toml:"url"`
@@ -102,36 +107,56 @@ func defaultConfig() *Config {
 }
 
 func LoadConfig(configFilePath string) (*Config, error) {
-	config := defaultConfig()
+	config := DefaultConfig()
 
 	if _, err := os.Stat(configFilePath); os.IsNotExist(err) {
 		data, err := toml.Marshal(config)
 		if err != nil {
-			log.Errorf("Failed to marshal default config: %v", err)
+			Error("Failed to marshal default config.", map[string]any{
+				"error": err,
+			})
 			return nil, err
 		}
 
 		if err := os.WriteFile(configFilePath, data, 0644); err != nil {
-			log.Errorf("Failed to write default config file: %v", err)
+			Error("Failed to write default config file.", map[string]any{
+				"error": err,
+			})
 			return nil, err
 		}
 
-		log.Infof("Created default config file at: %s", configFilePath)
+		Info("Created default config file.", map[string]any{
+			"filepath": configFilePath,
+		})
 	} else {
 		data, err := os.ReadFile(configFilePath)
 		if err != nil {
-			log.Errorf("Failed to read config file: %v", err)
+			Error("Failed to read config file.", map[string]any{
+				"error": err,
+			})
 			return nil, err
 		}
 
 		if err := toml.Unmarshal(data, config); err != nil {
-			log.Errorf("Failed to unmarshal config file: %v", err)
+			Error("Failed to unmarshal config file.", map[string]any{
+				"error": err,
+			})
 			return nil, err
 		}
 
-		defaultConfig := defaultConfig()
-		defaultVal := reflect.ValueOf(defaultConfig).Elem()
-		loadedVal := reflect.ValueOf(config).Elem()
+		err = fmt.Errorf("config is nil")
+		if config == nil {
+			Error("Unexpected config file.", map[string]any{
+				"error": err,
+			})
+			return nil, err
+		}
+
+		defaultCfg := DefaultConfig()
+		loadedCfg := config
+
+		defaultVal := reflect.ValueOf(defaultCfg).Elem()
+		loadedVal := reflect.ValueOf(loadedCfg).Elem()
 
 		for i := range defaultVal.NumField() {
 			fieldName := defaultVal.Type().Field(i).Name
@@ -139,12 +164,18 @@ func LoadConfig(configFilePath string) (*Config, error) {
 			loadedField := loadedVal.FieldByName(fieldName)
 
 			if !loadedField.IsValid() {
-				log.Errorf("Missing field in config: %s", fieldName)
+				Warn("Missing field in config.", map[string]any{
+					"fieldName": fieldName,
+				})
 				return nil, fmt.Errorf("missing field: %s", fieldName)
 			}
 
 			if loadedField.Type() != defaultField.Type() {
-				log.Errorf("Field %s has incorrect type: expected %s, got %s", fieldName, defaultField.Type(), loadedField.Type())
+				Warn("Field has incorrect type.", map[string]any{
+					"fieldName":         fieldName,
+					"loadedFieldType":   loadedField.Type(),
+					"expectedFieldType": defaultField.Type(),
+				})
 				return nil, fmt.Errorf("field %s has incorrect type: expected %s, got %s", fieldName, defaultField.Type(), loadedField.Type())
 			}
 
@@ -155,12 +186,21 @@ func LoadConfig(configFilePath string) (*Config, error) {
 					nestedLoadedField := loadedField.FieldByName(nestedFieldName)
 
 					if !nestedLoadedField.IsValid() {
-						log.Errorf("Missing nested field in config: %s.%s", fieldName, nestedFieldName)
+						Warn("Missing nested field in config.", map[string]any{
+							"parentFieldName":        fieldName,
+							"missingNestedFieldName": nestedFieldName,
+						})
 						return nil, fmt.Errorf("missing nested field: %s.%s", fieldName, nestedFieldName)
 					}
 
 					if nestedLoadedField.Type() != nestedDefaultField.Type() {
-						log.Errorf("Field %s.%s has incorrect type: expected %s, got %s", fieldName, nestedFieldName, nestedDefaultField.Type(), nestedLoadedField.Type())
+						Warn("Nested field has incorrect type", map[string]any{
+							"parentFieldName":   fieldName,
+							"NestedFieldName":   nestedFieldName,
+							"fullFieldName":     fmt.Sprintf("%s.%s", fieldName, nestedFieldName),
+							"expectedFieldType": nestedDefaultField.Type(),
+							"loadedFieldType":   nestedLoadedField.Type(),
+						})
 						return nil, fmt.Errorf("field %s.%s has incorrect type: expected %s, got %s", fieldName, nestedFieldName, nestedDefaultField.Type(), nestedLoadedField.Type())
 					}
 				}

@@ -17,10 +17,10 @@ type Client struct {
 
 func GetGitRepositoryInfo(workspacePath string) (remoteURL, branchName string, err error) {
 	workspacePath = filepath.Clean(workspacePath)
-	if strings.HasPrefix(workspacePath, "file://") {
-		workspacePath = strings.TrimPrefix(workspacePath, "file://")
-	} else if strings.HasPrefix(workspacePath, "file:") {
-		workspacePath = strings.TrimPrefix(workspacePath, "file:")
+	if trimmed, ok := strings.CutPrefix(workspacePath, "file://"); ok {
+		workspacePath = trimmed
+	} else if trimmed, ok := strings.CutPrefix(workspacePath, "file:"); ok {
+		workspacePath = trimmed
 	}
 
 	repo, err := git.PlainOpen(workspacePath)

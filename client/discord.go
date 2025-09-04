@@ -7,13 +7,10 @@ import (
 	"time"
 
 	"github.com/hugolgst/rich-go/client"
-	log "github.com/sirupsen/logrus"
 	"github.com/zerootoad/discord-rpc-lsp/utils"
 )
 
-var (
-	debouncer = utils.NewDebouncer(5 * time.Second)
-)
+var throttler = utils.NewThrottler(5 * time.Second)
 
 func Login(applicationID string) error {
 	return client.Login(applicationID)
@@ -25,7 +22,7 @@ func Logout() {
 
 func replacePlaceholders(s string, placeholders map[string]string) string {
 	for placeholder, value := range placeholders {
-		s = strings.Replace(s, placeholder, value, -1)
+		s = strings.ReplaceAll(s, placeholder, value)
 	}
 	return s
 }
@@ -133,13 +130,12 @@ func UpdateDiscordActivity(config *Config, tempaction, filename, workspace, curr
 	}
 
 	var err error
-	debouncer.Debounce(func() {
-		log.Info("Updating discord activity")
+	throttler.Run(func() {
 		err = client.SetActivity(activity)
 		if err != nil {
-			log.WithFields(log.Fields{
+			Error("Failed to update Discord activity", map[string]any{
 				"error": err,
-			}).Error("Failed to update Discord activity")
+			})
 		}
 	})
 	return err
@@ -182,13 +178,12 @@ func ClearDiscordActivity(config *Config, action, filename, workspace, editor, g
 	}
 
 	var err error
-	debouncer.Debounce(func() {
-		log.Info("Clear discord activity")
+	throttler.Run(func() {
 		err = client.SetActivity(activity)
 		if err != nil {
-			log.WithFields(log.Fields{
+			Error("Failed to update Discord activity", map[string]any{
 				"error": err,
-			}).Error("Failed to clear Discord activity")
+			})
 		}
 	})
 	return err
