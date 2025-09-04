@@ -124,16 +124,24 @@ This LSP works with any editor that supports the Language Server Protocol (LSP).
 local lspconfig = require('lspconfig')
 local configs = require('lspconfig.configs')
 
-configs.discord_rpc = {
-    default_config = {
-        cmd = { "discord-rpc-lsp" },  -- full path if not in PATH
-        filetypes = {"*"},             -- adjust to your languages
-        root_dir = function(fname)
-            return lspconfig.util.root_pattern('.git')(fname) or vim.fn.getcwd()
-        end,
-        settings = {},
-    },
-}
+if not configs.discord_rpc then
+    configs.discord_rpc = {
+        default_config = {
+            cmd = { "discord-rpc-lsp" },  -- Make sure this is in your PATH
+            filetypes = { "*" },          -- Attach to all filetypes
+            root_dir = function(fname)
+                return lspconfig.util.root_pattern('.git')(fname) or vim.loop.cwd()
+            end,
+            settings = {},
+        },
+    }
+end
+
+lspconfig.discord_rpc.setup({
+    on_attach = function(client, bufnr)
+        print("DiscordRPC started!")
+    end,
+})
 ```
 
 ---
