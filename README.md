@@ -270,7 +270,8 @@ output = 'file'
 ## Known Issues
 
 1. “Show repository” button may not appear: check [issue #3](https://github.com/zerootoad/discord-rpc-lsp/issues/3).
-2. LSP exiting/not working: check editor logs and LSP output logs for runtime errors and open an issue.
+2. issues with the package: "github.com/tliron/kutil/terminal". Please refer to [issue #6](https://github.com/zerootoad/discord-rpc-lsp/issues/6)
+3. LSP exiting/not working: check editor logs and LSP output logs for runtime errors and open an issue.
 
 ---
 
