@@ -167,43 +167,6 @@ Add additional languages as needed.
 
 ---
 
-### Visual Studio Code
-
-`settings.json`:
-
-```json
-{
-  "languageserver": {
-    "discord-rpc-lsp": {
-      "command": "discord-rpc-lsp",
-      "args": [],
-      "filetypes": ["go","python","javascript","typescript","rust","lua","c","cpp","java","text"],
-      "rootPatterns": [".git","."],
-      "trace.server": "verbose"
-    }
-  }
-}
-```
-
----
-
-### Zed Editor
-
-Zed automatically detects LSP servers:
-
-1. Ensure `discord-rpc-lsp` is in your PATH.
-2. Open Zed and a project/file → Discord Rich Presence updates automatically.
-
-Optional wrapper script:
-
-```bash
-#!/bin/bash
-export PATH=$PATH:$(go env GOPATH)/bin
-zed "$@"
-```
-
----
-
 ## Configuration
 
 Configuration is done via `config.toml` in the configuration directory:
